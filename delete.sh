@@ -1,6 +1,12 @@
 docker exec "$1" rcon-cli stop
+success="$?"
+if [ $success -gt 0 ]; then
+	echo "Could not connect to server $1 using RCON." >&2
+	exit 1;
+fi
 echo "Waiting for server to stop..." >&2
-while $(docker ps | grep "$1"); do
+while docker ps --no-trunc | grep "$1" > /dev/null; do
+        echo "Server $1 still running..." >&2
 	sleep 5;
 done
 docker rm "$1"
