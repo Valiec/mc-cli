@@ -75,19 +75,15 @@ create() {
 		case "$option" in 
 			t) 
 				server_type="$OPTARG" 
-				echo "type $OPTARG"
 				;;
 			v) 
 				server_version="$OPTARG"
-				echo "version $OPTARG"
 				;;
 			j)
 				java_version="$OPTARG"
-				echo "java $OPTARG"
 				;;
 			r)
 				rcon_password="$OPTARG"
-				echo "rcon $OPTARG"
 				;;
 		esac
 	done
