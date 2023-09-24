@@ -4,7 +4,7 @@ action="$1"
 
 shift 1;
 
-SCRIPT_ROOT=$(dirname "$(readlink -f $0)")
+SCRIPT_ROOT="$(dirname "$(readlink -f "$0")")"
 
 # default MCCLI_DIR is ~/.mccli, but you can configure it
 if [ ! -v MCCLI_DIR ]; then
