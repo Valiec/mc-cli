@@ -65,13 +65,43 @@ list() {
 }
 
 create() {
+
+
+	server_type="VANILLA"
+	server_version="LATEST"
+	java_version="latest"
+
+	while getopts ':t:v:j:r:' option; do
+		case "$option" in 
+			t) 
+				server_type="$OPTARG" 
+				echo "type $OPTARG"
+				;;
+			v) 
+				server_version="$OPTARG"
+				echo "version $OPTARG"
+				;;
+			j)
+				java_version="$OPTARG"
+				echo "java $OPTARG"
+				;;
+			r)
+				rcon_password="$OPTARG"
+				echo "rcon $OPTARG"
+				;;
+		esac
+	done
+
+	shift "$(( OPTIND-1 ))"
+
+
 	if (( $# < 1 )); then
 		log_error "create: missing server name and port"
 		echo "usage: mccli create <server name> <port> [data path]" >&2
 		exit 1;
 	elif (( $# < 2 )); then
 		log_error "create: missing port"
-		echo "usage: mccli create <server name> <port> [data path]" >&2
+		echo "usage: mccli create [-t SERVER_TYPE] [-v MC_VERSION] [-j JAVA_VERSION] [-r RCON_PASSWORD] <server name> <port> [data path]" >&2
 		exit 1;
 	fi
 
@@ -99,11 +129,9 @@ create() {
 	tmp_file="$(mktemp)"
 
 	# this is only used inside the container and isn't exposed, MD5sum of data dir so it's consistent
-	rcon_password="$(md5sum <<<"$data_path" | cut -f 1 -d " ")"
-
-	server_type="VANILLA"
-	server_version="LATEST"
-	java_version="latest"
+	if [ ! -v rcon_password ]; then
+		rcon_password="$(md5sum <<<"$data_path" | cut -f 1 -d " ")"
+	fi
 
 	bash "$SCRIPT_ROOT"/commands/create.sh "$port" "$data_path" "$server_type" "$server_version" "$java_version" "$rcon_password" > "$tmp_file";
 	success="$?"
