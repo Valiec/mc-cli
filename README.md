@@ -1,7 +1,7 @@
 # mc-cli
 CLI minecraft server console
 
-This is very very WIP, will write more when it's closer to done.
+Uses the https://github.com/itzg/docker-minecraft-server Docker image for running servers.
 
 ## Installing
 
