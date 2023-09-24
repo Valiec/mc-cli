@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 MAIN_SCRIPT="$(dirname "$(readlink -f "$0")")/mccli.sh"
 
 INSTALL_PATH="/usr/local/bin"
@@ -20,6 +22,13 @@ fi
 
 echo "Installing to $INSTALL_PATH/mccli"
 
+set +e
 ln -s "$MAIN_SCRIPT" "$INSTALL_PATH/mccli";
+install_success="$?"
+set -e
 
-echo "Installed"
+if [ "$install_success" -eq 0 ]; then
+	echo "Installed"
+else
+	echo "Install failed"
+fi
