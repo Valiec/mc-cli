@@ -235,16 +235,11 @@ info() {
 }
 
 help() {
-	bash "$SCRIPT_ROOT"/help.sh;
+	bash "$SCRIPT_ROOT"/help.sh "$@";
 }
 
 
 case "$action" in
-	"") 
-		log_error "no subcommand specified";
-		usage;
-		exit 1;
-		;;
 	"list") list "$@" ;;
 	"create") create "$@" ;;
 	"delete") delete "$@" ;;
@@ -256,6 +251,11 @@ case "$action" in
 	"status") status "$@" ;;
 	"info") info "$@" ;;
 	"help") help "$@" ;;
+	"") 
+		log_error "no subcommand specified";
+		usage;
+		exit 1;
+		;;
 	*)
 		log_error "invalid command: $action"
 		usage;
