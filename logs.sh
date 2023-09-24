@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 docker ps --no-trunc | grep "$1" >/dev/null
 
 server_running="$?"

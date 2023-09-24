@@ -1,11 +1,13 @@
+#!/usr/bin/env bash
+
 line_count=0
 
 clear_screen() {
 	if [ "$1" -gt 0 ]; then
-		for i in $(seq 1 "$1"); do
-			printf "\r$(tput el)$(tput cuu1)"
+		for _ in $(seq 1 "$1"); do
+			printf "\r%s%s" "$(tput el)" "$(tput cuu1)"
 	    done
-	    printf "$(tput el)"
+	    printf "%s" "$(tput el)"
 	fi
 }
 
@@ -36,7 +38,7 @@ while true; do
 
     printf "%s\n%s\n" "$health_str" "$cpu_ram_str"
     if [ "$player_line_count" -gt 0 ]; then
-    	printf "\nPlayers online:\n$list_str\n"
+    	printf "\nPlayers online:\n%s\n" "$list_str"
         player_line_count=$((player_line_count+2))
     fi
     line_count=$((player_line_count + 6))

@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 action="$1"
 
 shift 1;
@@ -42,11 +44,11 @@ done < "$MCCLI_DIR"/servers.conf
 
 
 log_error() {
-	echo "mccli:" $@ >&2
+	echo "mccli:" "$@" >&2
 }
 
 check_server_exists() {
-	if [ ! -v servers[$server_name] ]; then
+	if [ ! -v "servers[$server_name]" ]; then
 		log_error "server $server_name does not exist"
 		exit 1;
 	fi
@@ -57,8 +59,8 @@ usage() {
 }
 
 list() {
-	for server in ${!servers[@]}; do
-		echo $server ":" ${servers[$server]}
+	for server in "${!servers[@]}"; do
+		echo "$server" ":" "${servers[$server]}"
 	done
 }
 
@@ -74,7 +76,7 @@ create() {
 	fi
 
 	server_name="$1"
-	if [ -v servers[$server_name] ]; then
+	if [ -v "servers[$server_name]" ]; then
 		log_error "server $server_name already exists"
 		exit 1;
 	fi
@@ -243,17 +245,17 @@ case "$action" in
 		usage;
 		exit 1;
 		;;
-	"list") list $@ ;;
-	"create") create $@ ;;
-	"delete") delete $@ ;;
-	"start") start $@ ;;
-	"stop") stop $@ ;;
-	"logs") logs $@ ;;
-	"rcon") rcon $@ ;;
-	"cmd") cmd $@ ;;
-	"status") status $@ ;;
-	"info") info $@ ;;
-	"help") help $@ ;;
+	"list") list "$@" ;;
+	"create") create "$@" ;;
+	"delete") delete "$@" ;;
+	"start") start "$@" ;;
+	"stop") stop "$@" ;;
+	"logs") logs "$@" ;;
+	"rcon") rcon "$@" ;;
+	"cmd") cmd "$@" ;;
+	"status") status "$@" ;;
+	"info") info "$@" ;;
+	"help") help "$@" ;;
 	*)
 		log_error "invalid command: $action"
 		usage;
@@ -265,6 +267,6 @@ esac
 printf "" > "$MCCLI_DIR"/servers.conf;
 
 # write new data
-for server in ${!servers[@]}; do
+for server in "${!servers[@]}"; do
 	printf "%s\t%s\t%s\n" "$server" "${servers[$server]}" "${server_info[$server]}" >> "$MCCLI_DIR"/servers.conf
 done

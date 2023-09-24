@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 docker ps --no-trunc | grep "$1" >/dev/null
 
 server_running="$?"
@@ -9,4 +11,4 @@ fi
 
 container="$1"
 shift 1
-docker exec "$container" rcon-cli $@
+docker exec "$container" rcon-cli "$@"

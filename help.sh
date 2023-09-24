@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 cat << HEREDOC 
 MC-CLI help:
 
