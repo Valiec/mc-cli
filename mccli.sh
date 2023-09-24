@@ -4,7 +4,7 @@ action="$1"
 
 shift 1;
 
-SCRIPT_ROOT=$(dirname "$0")
+SCRIPT_ROOT=$(dirname "$(readlink -f $0)")
 
 # default MCCLI_DIR is ~/.mccli, but you can configure it
 if [ ! -v MCCLI_DIR ]; then
@@ -101,7 +101,11 @@ create() {
 	# this is only used inside the container and isn't exposed, MD5sum of data dir so it's consistent
 	rcon_password="$(md5sum <<<"$data_path" | cut -f 1 -d " ")"
 
-	bash "$SCRIPT_ROOT"/create.sh "$port" "$data_path" "VANILLA" "LATEST" "latest" "$rcon_password" > "$tmp_file";
+	server_type="VANILLA"
+	server_version="LATEST"
+	java_version="latest"
+
+	bash "$SCRIPT_ROOT"/create.sh "$port" "$data_path" "$server_type" "$server_version" "$java_version" "$rcon_password" > "$tmp_file";
 	success="$?"
 
 	if [ "$success" -gt 0 ]; then
