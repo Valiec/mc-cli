@@ -105,7 +105,7 @@ create() {
 	server_version="LATEST"
 	java_version="latest"
 
-	bash "$SCRIPT_ROOT"/create.sh "$port" "$data_path" "$server_type" "$server_version" "$java_version" "$rcon_password" > "$tmp_file";
+	bash "$SCRIPT_ROOT"/commands/create.sh "$port" "$data_path" "$server_type" "$server_version" "$java_version" "$rcon_password" > "$tmp_file";
 	success="$?"
 
 	if [ "$success" -gt 0 ]; then
@@ -126,7 +126,7 @@ delete() {
 	server_name="$1"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	bash "$SCRIPT_ROOT"/delete.sh "$server_docker_id";
+	bash "$SCRIPT_ROOT"/commands/delete.sh "$server_docker_id";
 	unset 'servers[$server_name]'
 	unset 'server_info[$server_name]'
 }
@@ -152,7 +152,7 @@ stop() {
 	server_name="$1"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	bash "$SCRIPT_ROOT"/cmd.sh "$server_docker_id" "stop";
+	bash "$SCRIPT_ROOT"/commands/cmd.sh "$server_docker_id" "stop";
 }
 
 logs() {
@@ -164,7 +164,7 @@ logs() {
 	server_name="$1"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	bash "$SCRIPT_ROOT"/logs.sh "$server_docker_id";
+	bash "$SCRIPT_ROOT"/commands/logs.sh "$server_docker_id";
 }
 
 rcon() {
@@ -176,7 +176,7 @@ rcon() {
 	server_name="$1"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	bash "$SCRIPT_ROOT"/cmd_interactive.sh "$server_docker_id";
+	bash "$SCRIPT_ROOT"/commands/cmd_interactive.sh "$server_docker_id";
 }
 
 cmd() {
@@ -193,7 +193,7 @@ cmd() {
 	cmd="$2"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	bash "$SCRIPT_ROOT"/cmd.sh "$server_docker_id" "$cmd";
+	bash "$SCRIPT_ROOT"/commands/cmd.sh "$server_docker_id" "$cmd";
 }
 
 status() {
@@ -205,7 +205,7 @@ status() {
 	server_name="$1"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	bash "$SCRIPT_ROOT"/status.sh "$server_docker_id";
+	bash "$SCRIPT_ROOT"/commands/status.sh "$server_docker_id";
 }
 
 info() {
@@ -239,7 +239,7 @@ info() {
 }
 
 help() {
-	bash "$SCRIPT_ROOT"/help.sh "$@";
+	bash "$SCRIPT_ROOT"/commands/help.sh "$@";
 }
 
 
