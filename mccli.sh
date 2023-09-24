@@ -138,7 +138,7 @@ create() {
 	fi
 
 	servers["$server_name"]="$(cat "$tmp_file")"
-	server_info["$server_name"]="25565	VANILLA	LATEST	latest	some-rcon-password	$data_path"
+	server_info["$server_name"]="$port	$server_type	$server_version	$java_version	$rcon_password	$data_path"
 }
 
 delete() {
@@ -164,7 +164,8 @@ start() {
 	server_name="$1"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	docker start "$server_docker_id"
+	# redirect to /dev/null to stop printing container ID
+	docker start "$server_docker_id" >/dev/null
 }
 
 stop() {
