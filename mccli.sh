@@ -14,7 +14,7 @@ export MCCLI_DIR
 
 # if $MCCLI_DIR exists, but it's not a directory
 if [ -a "$MCCLI_DIR" ] && [ ! -d "$MCCLI_DIR" ]; then
-	echo "mccli: config path $MCCLI_DIR already exists and is not a directory" >&2
+	log_error "config path $MCCLI_DIR already exists and is not a directory"
 	exit 1;
 fi
 
@@ -28,12 +28,16 @@ declare -A servers
 
 declare -A servers_info
 
+# a colon-separated list of ports used so I can detect a reused port before Docker complains
+used_ports=""
+
 while read -r line; do
 	server_name=$(cut -f 1 -d $'\t' <<<"$line");
 	server_docker_id=$(cut -f 2 -d $'\t' <<<"$line");
 	server_info=$(cut -f 3- -d $'\t' <<<"$line");
 	servers["$server_name"]="$server_docker_id";
 	servers_info["$server_name"]="$server_info";
+	used_ports="$used_ports:$(cut -f 1 -d $'\t' <<<"${servers_info["$server_name"]}")"
 done < "$MCCLI_DIR"/servers.conf
 
 
@@ -59,14 +63,49 @@ list() {
 }
 
 create() {
+	if (( $# < 1 )); then
+		log_error "create: missing server name and port"
+		echo "usage: mccli create <server name> <port> [data path]" >&2
+		exit 1;
+	elif (( $# < 2 )); then
+		log_error "create: missing port"
+		echo "usage: mccli create <server name> <port> [data path]" >&2
+		exit 1;
+	fi
+
 	server_name="$1"
 	if [ -v servers[$server_name] ]; then
 		log_error "server $server_name already exists"
 		exit 1;
 	fi
-	echo "create";
-	servers["$server_name"]="docker_id"
-	server_info["$server_name"]="some	info"
+
+	port="$2";
+
+	data_path="$MCCLI_DIR/$server_name/data";
+
+	if [ -v "$3" ]; then
+		data_path="$3";	
+	fi
+
+	if [ -a "$data_path" ] && [ ! -d "$data_path" ]; then
+		log_error "data path $data_path already exists and is not a directory"
+		exit 1;
+	fi
+
+	mkdir -p "$MCCLI_DIR/$server_name/data";
+
+	tmp_file="$(mktemp)"
+
+	bash "$SCRIPT_ROOT"/create.sh "$port" "$data_path" "VANILLA" "LATEST" "latest" "some-rcon-password" > "$tmp_file";
+	success="$?"
+
+	if [ "$success" -gt 0 ]; then
+		log_error "server creation failed";
+		exit 1;
+	fi
+
+	servers["$server_name"]="$(cat "$tmp_file")"
+	server_info["$server_name"]="25565	VANILLA	LATEST	latest	some-rcon-password	$data_path"
 }
 
 delete() {
@@ -104,7 +143,7 @@ stop() {
 	server_name="$1"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	echo "stop";
+	bash "$SCRIPT_ROOT"/cmd.sh "$server_docker_id" "stop";
 }
 
 logs() {
@@ -142,9 +181,10 @@ cmd() {
 		exit 1;
 	fi
 	server_name="$1"
+	cmd="$2"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	bash "$SCRIPT_ROOT"/cmd.sh "$server_docker_id";
+	bash "$SCRIPT_ROOT"/cmd.sh "$server_docker_id" "$cmd";
 }
 
 status() {
@@ -178,7 +218,7 @@ help() {
 
 case "$action" in
 	"") 
-		echo "mccli: no subcommand specified";
+		log_error "no subcommand specified";
 		usage;
 		exit 1;
 		;;
@@ -194,7 +234,7 @@ case "$action" in
 	"info") info $@ ;;
 	"help") help $@ ;;
 	*)
-		echo "mccli: invalid command: $action"
+		log_error "invalid command: $action"
 		usage;
 		exit 1;
 		;;
