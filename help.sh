@@ -43,6 +43,7 @@ else
 			;;
 		"create")
 			echo "Creates a new Minecraft server with the given name and configuration." 
+			echo "See https://docker-minecraft-server.readthedocs.io/en/latest/versions/java/ for config info"
 			echo "usage: mccli create <server name> <port> [data dir]" 
 			;;
 		"delete")
