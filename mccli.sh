@@ -96,7 +96,10 @@ create() {
 
 	tmp_file="$(mktemp)"
 
-	bash "$SCRIPT_ROOT"/create.sh "$port" "$data_path" "VANILLA" "LATEST" "latest" "some-rcon-password" > "$tmp_file";
+	# this is only used inside the container and isn't exposed, MD5sum of data dir so it's consistent
+	rcon_password="$(md5sum <<<"$data_path" | cut -f 1 -d " ")"
+
+	bash "$SCRIPT_ROOT"/create.sh "$port" "$data_path" "VANILLA" "LATEST" "latest" "$rcon_password" > "$tmp_file";
 	success="$?"
 
 	if [ "$success" -gt 0 ]; then
@@ -131,7 +134,7 @@ start() {
 	server_name="$1"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	echo "start";
+	docker start "$server_docker_id"
 }
 
 stop() {
@@ -208,7 +211,25 @@ info() {
 	server_name="$1"
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
-	echo "info";
+
+	docker ps --no-trunc | grep "$server_docker_id" >/dev/null
+
+	server_running="$?"
+
+	running="Yes"
+
+	if [ "$server_running" -gt 0 ]; then
+		running="No"
+	fi
+
+	echo "$server_name info:"
+	echo "Container ID: $server_docker_id"
+	echo "Running: $running"
+	echo "Port: $(cut -f 1 -d $'\t' <<<"${servers_info["$server_name"]}")"
+	echo "Data folder: $(cut -f 6- -d $'\t' <<<"${servers_info["$server_name"]}")"
+	echo "Type: $(cut -f 2 -d $'\t' <<<"${servers_info["$server_name"]}")"
+	echo "Minecraft version: $(cut -f 3 -d $'\t' <<<"${servers_info["$server_name"]}")"
+	echo "Java version: $(cut -f 4 -d $'\t' <<<"${servers_info["$server_name"]}")"
 }
 
 help() {
