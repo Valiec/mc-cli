@@ -22,7 +22,7 @@ while true; do
 	fi
 
 	health_str=$(docker exec "$1"  mc-health | sed "s/localhost:25565 : //" \
-		| sed -E "s/version=([^ ]+) online=([^ ]+) max=([^ ]+) motd='(.+)'/Version: \1\nPlayers Online: \2\/\3\nMOTD: \4/g")
+		| sed -E "s/version=(.+) online=([^ ]+) max=([^ ]+) motd='(.+)'/Version: \1\nPlayers Online: \2\/\3\nMOTD: \4/g")
 	cpu_ram_str=$(docker exec "$1" top -b -n 1 -E k | grep java \
 		| awk '{ print "Total Memory: " $5/1024, "MiB\nPhysical Memory: " $6, "\n%CPU: " $9 }')
     list_str=$(docker exec "$1" rcon-cli list | sed -E "s/There are [0-9]+ of a max of [0-9]+ players online:[ ]+//" \
