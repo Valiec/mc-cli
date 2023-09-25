@@ -8,7 +8,11 @@ SCRIPT_ROOT="$(dirname "$(readlink -f "$0")")"
 
 # default MCCLI_DIR is ~/.mccli, but you can configure it
 if [ ! -v MCCLI_DIR ]; then
-	MCCLI_DIR="$HOME"/.mccli
+	if [ -f "$HOME"/.mccli_dir ]; then
+		MCCLI_DIR="$(cat "$HOME"/.mccli_dir)"
+	else
+		MCCLI_DIR="$HOME"/.mccli
+	fi
 fi
 
 # export MCCLI_DIR so that the subcommands can access it
@@ -84,6 +88,8 @@ create() {
 				;;
 			r)
 				rcon_password="$OPTARG"
+				;;
+			*) 
 				;;
 		esac
 	done
