@@ -44,7 +44,22 @@ else
 		"create")
 			echo "Creates a new Minecraft server with the given name and configuration." 
 			echo "See https://docker-minecraft-server.readthedocs.io/en/latest/versions/java/ for config info"
-			echo "usage: mccli create [-t SERVER_TYPE] [-v MC_VERSION] [-j JAVA_VERSION] [-r RCON_PASSWORD] <server name> <port> [data dir]" 
+			echo "usage: mccli create [-t SERVER_TYPE] [-v MC_VERSION] [-j JAVA_VERSION] [-r RCON_PASSWORD] <server name> <port> [data dir]"
+			cat <<-CREATE_HELP 
+			-r sets the RCON password. This is not currently exposed outside of the container and is mainly available for future features.
+
+			-v is the MC version the server will run. If it is not specified, it defaults to "LATEST".
+
+			-t is the type of server, see https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/ for what types are available and their names.
+
+			-j allows you to specify the Java version for the server. Use the table at https://docker-minecraft-server.readthedocs.io/en/latest/versions/java/ to get the version names.
+
+			<server name> is the name the server will be registered as in MC-CLI.
+
+			<port> is the port the server will listen on.
+
+			[data dir] is the directory where the server files will be stored. If not specified, it defaults to ~/.mccli/<server name>/data.
+			CREATE_HELP
 			;;
 		"delete")
 			echo "Deletes a Minecraft server." 
