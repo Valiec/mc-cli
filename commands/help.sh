@@ -29,9 +29,11 @@ if (( $# < 1 )); then
 
 	    info:	Displays installation info for a Minecraft server.
 
+	    version:	Displays the version number of MC-CLI.
+
 	    help:	Displays this help message.
 
-	Use mccli help <subcommand> for more detailed help on a given command.
+	Use 'mccli help <subcommand>' for more detailed help on a given command.
 
 	HEREDOC
 
@@ -92,6 +94,10 @@ else
 		"info")
 			echo "Displays installation info for a Minecraft server." 
 			echo "usage: mccli info <server name>" 
+			;;
+		"version")
+			echo "Displays the version number of MC-CLI." 
+			echo "usage: mccli version" 
 			;;
 		"help")
 			echo "Displays help for MC-CLI." 

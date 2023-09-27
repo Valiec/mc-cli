@@ -2,6 +2,8 @@
 
 action="$1"
 
+export MCCLI_VERSION="1.0.0"
+
 shift 1;
 
 SCRIPT_ROOT="$(dirname "$(readlink -f "$0")")"
@@ -16,7 +18,7 @@ if [ ! -v MCCLI_DIR ]; then
 fi
 
 # export MCCLI_DIR so that the subcommands can access it
-export MCCLI_DIR
+export MCCLI_DIR MCCLI_VERSION
 
 # if $MCCLI_DIR exists, but it's not a directory
 if [ -a "$MCCLI_DIR" ] && [ ! -d "$MCCLI_DIR" ]; then
@@ -28,6 +30,10 @@ fi
 if [ ! -a "$MCCLI_DIR" ]; then
 	mkdir -p "$MCCLI_DIR";
 	touch "$MCCLI_DIR"/servers.conf;
+fi
+
+if [ ! -a "$MCCLI_DIR/config" ]; then
+	echo "VERSION=$MCCLI_VERSION" > "$MCCLI_DIR"/config;
 fi
 
 declare -A servers
@@ -273,6 +279,10 @@ help() {
 	bash "$SCRIPT_ROOT"/commands/help.sh "$@";
 }
 
+version() {
+	echo "mccli $MCCLI_VERSION";
+}
+
 
 case "$action" in
 	"list") list "$@" ;;
@@ -285,6 +295,7 @@ case "$action" in
 	"cmd") cmd "$@" ;;
 	"status") status "$@" ;;
 	"info") info "$@" ;;
+	"version") version "$@" ;;
 	"help") help "$@" ;;
 	"") 
 		log_error "no subcommand specified";
@@ -305,3 +316,6 @@ printf "" > "$MCCLI_DIR"/servers.conf;
 for server in "${!servers[@]}"; do
 	printf "%s\t%s\t%s\n" "$server" "${servers[$server]}" "${server_info[$server]}" >> "$MCCLI_DIR"/servers.conf
 done
+
+# rewrite the config file
+echo "VERSION=$MCCLI_VERSION" > "$MCCLI_DIR"/config;
