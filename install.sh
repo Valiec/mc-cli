@@ -14,6 +14,10 @@ if [ ! -a "$INSTALL_PATH" ]; then
 	mkdir -p "$INSTALL_PATH"
 fi
 
+if ! which docker; then
+	echo "mccli installer: docker is required and cannot be found, exiting"
+	exit 1;
+fi
 
 if [ -a "$INSTALL_PATH/mccli" ]; then
 	echo "mccli installer: $INSTALL_PATH/mccli already exists, exiting"
