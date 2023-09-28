@@ -32,9 +32,19 @@ if [ ! -a "$MCCLI_DIR" ]; then
 	touch "$MCCLI_DIR"/servers.conf;
 fi
 
+MCCLI_DOCKER=""
+
 if [ ! -a "$MCCLI_DIR/config" ]; then
 	echo "VERSION=$MCCLI_VERSION" > "$MCCLI_DIR"/config;
+	if which docker; then
+		MCCLI_DOCKER="true"
+	else
+		MCCLI_DOCKER="false"
+	fi
+	echo "USE_DOCKER=$MCCLI_DOCKER" >> "$MCCLI_DIR"/config;
 fi
+
+export MCCLI_DOCKER
 
 declare -A servers
 
@@ -319,3 +329,4 @@ done
 
 # rewrite the config file
 echo "VERSION=$MCCLI_VERSION" > "$MCCLI_DIR"/config;
+echo "USE_DOCKER=$MCCLI_DOCKER" >> "$MCCLI_DIR"/config;
