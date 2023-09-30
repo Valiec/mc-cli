@@ -44,7 +44,7 @@ if [ ! -a "$MCCLI_DIR/config" ]; then
 	echo "USE_DOCKER=$MCCLI_DOCKER" >> "$MCCLI_DIR"/config;
 fi
 
-export MCCLI_DOCKER
+export MCCLI_DOCKER SCRIPT_ROOT
 
 declare -A servers
 
