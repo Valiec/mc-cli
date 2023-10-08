@@ -49,11 +49,14 @@ init_mccli() {
 		else
 			MCCLI_SCREEN="false";
 		fi
-
-
-
-		echo "USE_DOCKER=$MCCLI_DOCKER" >> "$MCCLI_DIR"/config;
-		echo "USE_SCREEN=$MCCLI_SCREEN" >> "$MCCLI_DIR"/config;
+	else
+		while read -r line; do
+			case "$(cut -f 1 -d "=" <<< "$line")" in
+				"USE_DOCKER") MCCLI_DOCKER="$(cut -f 2 -d "=" <<< "$line")"; ;;
+				"USE_DOCKER") MCCLI_SCREEN="$(cut -f 2 -d "=" <<< "$line")"; ;;
+				*) ;;
+			esac
+		done < "$MCCLI_DIR"/config
 	fi
 
 	if [ ! -d "$MCCLI_DIR/venv" ]; then
