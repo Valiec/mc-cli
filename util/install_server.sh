@@ -56,7 +56,7 @@ case "$server_type" in
 		;;
 	"vanilla")
 		"$SCRIPT_ROOT/util/download_vanilla.sh" "$data_dir" "$mc_version";
-		echo "java -jar server.jar;" > "$data_dir/start.sh";
+		echo "java -jar server.jar -nogui;" > "$data_dir/start.sh";
 		chmod 755 "$data_dir/start.sh";
 		;;
 	*)

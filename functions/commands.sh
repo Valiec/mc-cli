@@ -114,7 +114,27 @@ start() {
 	if [ "$MCCLI_DOCKER" = "true" ]; then
 		docker start "$server_docker_id" >/dev/null
 	else
-		bash "$SCRIPT_ROOT"/util/start_server.sh "$server_name";
+		data_dir="$(cut -f 6 -d $'\t' <<<"${servers_info["$server_name"]}")"
+		server_name="$(cut -f 3 -d $'\t' <<<"${servers_info["$server_name"]}")"
+		java_home="$(cut -f 7 -d $'\t' <<<"${servers_info["$server_name"]}")"
+		if [ ! -e "$data_dir/eula.txt" ]; then
+			if [ "$MCCLI_EULA" = "true" ]; then
+				echo "eula=true" > "$data_dir/eula.txt";
+			else
+				echo "You must agree to the Minecraft EULA to start the server."
+				read -p "agree? [Y/n]: " answer
+			    if [ "$answer" != "Y" ]; then
+			        echo "Exiting." >&2
+			        exit 1;
+			    fi
+			    echo "Your EULA agreement will been saved for future servers."
+			    echo "eula=true" > "$data_dir/eula.txt";
+
+			    # User has accepted the EULA, save this and don't prompt again
+			    export MCCLI_EULA="true";
+			fi
+		fi
+		bash "$SCRIPT_ROOT"/util/start_server.sh "$server_name" "$data_dir" "$java_home";
 	fi
 }
 
@@ -193,7 +213,7 @@ info() {
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
 
-	docker ps --no-trunc | grep "$server_docker_id" >/dev/null
+	docker ps --no-trunc 2>/dev/null | grep "$server_docker_id" 2>&1 >/dev/null
 
 	server_running="$?"
 
@@ -207,10 +227,11 @@ info() {
 	echo "Container ID: $server_docker_id"
 	echo "Running: $running"
 	echo "Port: $(cut -f 1 -d $'\t' <<<"${servers_info["$server_name"]}")"
-	echo "Data folder: $(cut -f 6- -d $'\t' <<<"${servers_info["$server_name"]}")"
+	echo "Data folder: $(cut -f 6 -d $'\t' <<<"${servers_info["$server_name"]}")"
 	echo "Type: $(cut -f 2 -d $'\t' <<<"${servers_info["$server_name"]}")"
 	echo "Minecraft version: $(cut -f 3 -d $'\t' <<<"${servers_info["$server_name"]}")"
 	echo "Java version: $(cut -f 4 -d $'\t' <<<"${servers_info["$server_name"]}")"
+	echo "Java home: $(cut -f 7 -d $'\t' <<<"${servers_info["$server_name"]}")"
 }
 
 help() {

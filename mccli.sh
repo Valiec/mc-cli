@@ -61,3 +61,4 @@ done
 echo "VERSION=$MCCLI_VERSION" > "$MCCLI_DIR"/config;
 echo "USE_DOCKER=$MCCLI_DOCKER" >> "$MCCLI_DIR"/config;
 echo "USE_SCREEN=$MCCLI_SCREEN" >> "$MCCLI_DIR"/config;
+echo "AGREED_EULA=$MCCLI_EULA" >> "$MCCLI_DIR"/config;
