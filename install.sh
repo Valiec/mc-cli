@@ -10,7 +10,7 @@ if [ -v "$1" ]; then
 	INSTALL_PATH="$1"
 fi
 
-if [ ! -a "$INSTALL_PATH" ]; then
+if [ ! -e "$INSTALL_PATH" ]; then
 	mkdir -p "$INSTALL_PATH"
 fi
 
@@ -19,7 +19,7 @@ if ! which python; then
 	exit 1;
 fi
 
-if [ -a "$INSTALL_PATH/mccli" ]; then
+if [ -e "$INSTALL_PATH/mccli" ]; then
 	echo "mccli installer: $INSTALL_PATH/mccli already exists, exiting"
 	exit 1;
 fi

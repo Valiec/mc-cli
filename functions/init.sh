@@ -12,27 +12,48 @@ init_mccli() {
 	export MCCLI_DIR MCCLI_VERSION
 
 	# if $MCCLI_DIR exists, but it's not a directory
-	if [ -a "$MCCLI_DIR" ] && [ ! -d "$MCCLI_DIR" ]; then
+	if [ -e "$MCCLI_DIR" ] && [ ! -d "$MCCLI_DIR" ]; then
 		log_error "config path $MCCLI_DIR already exists and is not a directory"
 		exit 1;
 	fi
 
 	# if $MCCLI_DIR does not exist, create it and the servers file
-	if [ ! -a "$MCCLI_DIR" ]; then
+	if [ ! -e "$MCCLI_DIR" ]; then
 		mkdir -p "$MCCLI_DIR";
 		touch "$MCCLI_DIR"/servers.conf;
 	fi
 
 	MCCLI_DOCKER=""
+	MCCLI_SCREEN=""
 
-	if [ ! -a "$MCCLI_DIR/config" ]; then
+	if [ ! -e "$MCCLI_DIR/config" ]; then
 		echo "VERSION=$MCCLI_VERSION" > "$MCCLI_DIR"/config;
 		if which docker > /dev/null; then
-			MCCLI_DOCKER="true"
+			read -p "use Docker? [Y/n]: " use_docker
+			if [ "$use_docker" = "Y" ]; then
+				MCCLI_DOCKER="true";
+			else
+				MCCLI_DOCKER="false";
+			fi	
 		else
-			MCCLI_DOCKER="false"
+			MCCLI_DOCKER="false";
 		fi
+
+		if which screen > /dev/null; then
+			read -p "use Screen? [Y/n]: " use_screen
+			if [ "$use_screen" = "Y" ]; then
+				MCCLI_SCREEN="true";
+			else
+				MCCLI_SCREEN="false";
+			fi	
+		else
+			MCCLI_SCREEN="false";
+		fi
+
+
+
 		echo "USE_DOCKER=$MCCLI_DOCKER" >> "$MCCLI_DIR"/config;
+		echo "USE_SCREEN=$MCCLI_SCREEN" >> "$MCCLI_DIR"/config;
 	fi
 
 	if [ ! -d "$MCCLI_DIR/venv" ]; then
@@ -40,8 +61,6 @@ init_mccli() {
 		python -m venv "$MCCLI_DIR/venv"
 		"$MCCLI_DIR/venv/bin/pip" -qq install mcrcon
 	fi
-
-	export MCCLI_DOCKER SCRIPT_ROOT
 
 	# a colon-separated list of ports used so I can detect a reused port before Docker complains
 	used_ports=""

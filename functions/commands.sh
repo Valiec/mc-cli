@@ -55,7 +55,7 @@ create() {
 		data_path="$3";	
 	fi
 
-	if [ -a "$data_path" ] && [ ! -d "$data_path" ]; then
+	if [ -e "$data_path" ] && [ ! -d "$data_path" ]; then
 		log_error "data path $data_path already exists and is not a directory"
 		exit 1;
 	fi
