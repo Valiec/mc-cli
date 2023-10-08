@@ -15,8 +15,8 @@ cd "$download_dir"
 
 echo "Downloading $version JAR..."
 
-curl -# -o "$version"_server.jar "$download_url"
-downloaded_shasum="$(sha1sum "$version"_server.jar | cut -f 1 -d " ")"
+curl -# -o server.jar "$download_url"
+downloaded_shasum="$(sha1sum "server.jar" | cut -f 1 -d " ")"
 
 if [ "$download_hash" != "$downloaded_shasum" ]; then
     echo "mccli: warning: sha1 hash of downloaded file ($downloaded_shasum) does not match provided sum from Mojang ($download_hash)" >&2

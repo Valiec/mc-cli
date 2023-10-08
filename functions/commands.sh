@@ -111,7 +111,11 @@ start() {
 	check_server_exists "$server_name"
 	server_docker_id=${servers[$server_name]}
 	# redirect to /dev/null to stop printing container ID
-	docker start "$server_docker_id" >/dev/null
+	if [ "$MCCLI_DOCKER" = "true" ]; then
+		docker start "$server_docker_id" >/dev/null
+	else
+		bash "$SCRIPT_ROOT"/util/start_server.sh "$server_name";
+	fi
 }
 
 stop() {
