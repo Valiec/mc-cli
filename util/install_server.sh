@@ -4,18 +4,60 @@ set -e
 
 mc_version="latest"
 
-server_type="vanilla"
+server_type="VANILLA"
+
+loader_version="latest"
+
+while getopts ':v:t:l:' option; do
+	case "$option" in 
+		t) 
+			server_type="$OPTARG" 
+			;;
+		v) 
+			mc_version="$OPTARG"
+			;;
+		l)
+			loader_version="$OPTARG"
+			;;
+		*) 
+			;;
+	esac
+done
+
+
+
+shift "$(( OPTIND-1 ))"
 
 # this is an internal script, this is checked in the calling script
-data_dir="$1"
+
+# lowercase all type names
+data_dir=$(echo "$1" | tr "[:upper:]" "[:lower:]")
 
 case "$server_type" in 
-	"FORGE") "$MCCLI_DIR/mc-image-helper/bin/mc-image-helper" install-forge --minecraft-version "$mc_version" --output-directory "$data_dir" ;;
-	"PAPER") "$MCCLI_DIR/mc-image-helper/bin/mc-image-helper" install-paper --version "$mc_version" --output-directory "$data_dir" ;;
-	"SPIGOT") echo "spigot (I need to do buildtools)" ;;
-	"QUILT") echo "quilt (I need to run the installer JAR (and maybe install vanilla? idk if it does that for me))" ;;
-	"PURPUR") "$MCCLI_DIR/mc-image-helper/bin/mc-image-helper" install-purpur --version "$mc_version" --output-directory "$data_dir" ;;
-	"FABRIC") echo "fabric (I need to run the installer JAR (and maybe install vanilla? idk if it does that for me))" ;;
-	"VANILLA") echo "vanilla (I need to parse Mojang's JSON and download the right JAR)" ;;
-	*) echo "Invalid server type $server_type" >&2 ;;
+	"forge") 
+		"$MCCLI_DIR/mc-image-helper/bin/mc-image-helper" install-forge --minecraft-version "$mc_version" --output-directory "$data_dir";
+		;;
+	"paper") 
+		"$MCCLI_DIR/mc-image-helper/bin/mc-image-helper" install-paper --version "$mc_version" --output-directory "$data_dir";
+		;;
+	"spigot") 
+		"$SCRIPT_ROOT/install_spigot.sh" "$data_dir" "$mc_version";
+		;;
+	"quilt")
+		"$MCCLI_DIR/mc-image-helper/bin/mc-image-helper" install-quilt --minecraft-version "$mc_version" \
+		--output-directory "$data_dir" --loader-version "$mc_version";
+		;;
+	"purpur")
+		"$MCCLI_DIR/mc-image-helper/bin/mc-image-helper" install-purpur --version "$mc_version" --output-directory "$data_dir";
+		;;
+	"fabric")
+		"$MCCLI_DIR/mc-image-helper/bin/mc-image-helper" install-fabric-loader --minecraft-version "$mc_version" \
+		--output-directory "$data_dir" --loader-version "$mc_version";
+		;;
+	"vanilla")
+		"$SCRIPT_ROOT/util/download_vanilla.sh" "$data_dir" "$mc_version";
+		;;
+	*)
+		echo "Unsupported server type for non-containerized install: $server_type">&2;
+		;;
 esac
