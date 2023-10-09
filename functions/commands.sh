@@ -64,9 +64,19 @@ create() {
 
 	tmp_file="$(mktemp)"
 
-	# this is only used inside the container and isn't exposed, MD5sum of data dir so it's consistent
 	if [ ! -v rcon_password ]; then
-		rcon_password="$(md5sum <<<"$data_path" | cut -f 1 -d " ")"
+			if [ -e "$data_path/server.properties" ]; then
+				while read -r line; do
+					if [ "$(cut -f 1 -d "=" <<< "$line")" = "rcon.password" ]; then
+						# use existing RCON password
+						rcon_password="$(cut -f 2 -d "=" <<< "$line")"
+						break
+					fi
+				done
+			else
+				# randomized RCON password
+				rcon_password="$(head -c 32 /dev/random | base64)"
+			fi
 	fi
 
 	if [ MCCLI_DOCKER = "true" ]; then
