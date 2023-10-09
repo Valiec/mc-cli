@@ -12,13 +12,13 @@ declare -A servers
 
 declare -A servers_info
 
-declare MCCLI_DOCKER MCCLI_SCREEN SCRIPT_ROOT
+declare MCCLI_DOCKER MCCLI_SCREEN MCCLI_PYTHON SCRIPT_ROOT
 
 source "$SCRIPT_ROOT/functions/init.sh"
 
 init_mccli; # shell function, defined in init.sh
 
-export MCCLI_DOCKER MCCLI_SCREEN SCRIPT_ROOT
+export MCCLI_DOCKER MCCLI_SCREEN MCCLI_PYTHON SCRIPT_ROOT
 
 # defines the commands
 source "$SCRIPT_ROOT/functions/commands.sh"
@@ -61,4 +61,5 @@ done
 echo "VERSION=$MCCLI_VERSION" > "$MCCLI_DIR"/config;
 echo "USE_DOCKER=$MCCLI_DOCKER" >> "$MCCLI_DIR"/config;
 echo "USE_SCREEN=$MCCLI_SCREEN" >> "$MCCLI_DIR"/config;
+echo "PYTHON_PATH=$MCCLI_PYTHON" >> "$MCCLI_DIR"/config;
 echo "AGREED_EULA=$MCCLI_EULA" >> "$MCCLI_DIR"/config;

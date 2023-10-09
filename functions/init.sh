@@ -23,6 +23,7 @@ init_mccli() {
 		touch "$MCCLI_DIR"/servers.conf;
 	fi
 
+	MCCLI_PYTHON=""
 	MCCLI_DOCKER=""
 	MCCLI_SCREEN=""
 	MCCLI_EULA="false"
@@ -51,8 +52,18 @@ init_mccli() {
 			MCCLI_SCREEN="false";
 		fi
 
+		if which python > /dev/null; then
+			MCCLI_PYTHON="$(which python)";
+		elif which python3 > /dev/null; then
+			MCCLI_PYTHON="$(which python3)";
+		else
+			echo "mccli: python not found as 'python' or 'python3'"
+			read -p "Enter path to Python interpreter: " MCCLI_PYTHON
+		fi
+
 		echo "USE_DOCKER=$MCCLI_DOCKER" >> "$MCCLI_DIR"/config;
 		echo "USE_SCREEN=$MCCLI_SCREEN" >> "$MCCLI_DIR"/config;
+		echo "PYTHON_PATH=$MCCLI_PYTHON" >> "$MCCLI_DIR"/config;
 		echo "AGREED_EULA=false" >> "$MCCLI_DIR"/config;
 
 	else
@@ -60,6 +71,7 @@ init_mccli() {
 			case "$(cut -f 1 -d "=" <<< "$line")" in
 				"USE_DOCKER") MCCLI_DOCKER="$(cut -f 2 -d "=" <<< "$line")"; ;;
 				"USE_SCREEN") MCCLI_SCREEN="$(cut -f 2 -d "=" <<< "$line")"; ;;
+				"PYTHON_PATH") MCCLI_PYTHON="$(cut -f 2 -d "=" <<< "$line")"; ;;
 				"AGREED_EULA") MCCLI_EULA="$(cut -f 2 -d "=" <<< "$line")"; ;;
 				*) ;;
 			esac
@@ -68,7 +80,7 @@ init_mccli() {
 
 	if [ ! -d "$MCCLI_DIR/venv" ]; then
 		echo "initializing python venv..."
-		python -m venv "$MCCLI_DIR/venv"
+		"$MCCLI_PYTHON" -m venv "$MCCLI_DIR/venv"
 		"$MCCLI_DIR/venv/bin/pip" -qq install mcrcon
 	fi
 

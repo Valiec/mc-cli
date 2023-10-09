@@ -7,7 +7,7 @@ version="$2"
 
 echo "Downloading version manifest..."
 
-download_data=$(curl -# "https://launchermeta.mojang.com/mc/game/version_manifest.json" | python3 "$SCRIPT_ROOT/util/parse_mojang_json.py" "$version")
+download_data=$(curl -# "https://launchermeta.mojang.com/mc/game/version_manifest.json" | "$MCCLI_PYTHON" "$SCRIPT_ROOT/util/parse_mojang_json.py" "$version")
 download_hash="$(cut -f 1 <<< "$download_data")"
 download_url="$(cut -f 2- <<< "$download_data")"
 

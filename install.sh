@@ -14,11 +14,6 @@ if [ ! -e "$INSTALL_PATH" ]; then
 	mkdir -p "$INSTALL_PATH"
 fi
 
-if ! which python; then
-	echo "mccli installer: python is required and cannot be found, exiting"
-	exit 1;
-fi
-
 if [ -e "$INSTALL_PATH/mccli" ]; then
 	echo "mccli installer: $INSTALL_PATH/mccli already exists, exiting"
 	exit 1;
