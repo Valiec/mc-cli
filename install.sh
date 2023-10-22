@@ -19,20 +19,22 @@ if [ -e "$INSTALL_PATH/mccli" ]; then
 	exit 1;
 fi
 
-if which python > /dev/null; then
-	MCCLI_PYTHON="$(which python)";
-elif which python3 > /dev/null; then
-	MCCLI_PYTHON="$(which python3)";
-else
-	echo "mccli: python not found as 'python' or 'python3'"
-	read -p "Enter path to Python interpreter: " MCCLI_PYTHON
+if [ ! -v MCCLI_PYTHON ]; then
+	if which python > /dev/null; then
+		MCCLI_PYTHON="$(which python)";
+	elif which python3 > /dev/null; then
+		MCCLI_PYTHON="$(which python3)";
+	else
+		echo "mccli: python not found as 'python' or 'python3'"
+		read -p "Enter path to Python interpreter: " MCCLI_PYTHON
+	fi
 fi
 
 echo "mccli: using python at $MCCLI_PYTHON"
 
 echo "Installing to $INSTALL_PATH/mccli"
 
-sed "s!##PYTHON!export MCCLI_PYTHON=$MCCLI_PYTHON!" "$(dirname "$(readlink -f "$0")")/mccli.sh.template" > "$(dirname "$(readlink -f "$0")")/mccli.sh"
+sed "s!##PYTHON!python_path=\"$MCCLI_PYTHON\"!" "$(dirname "$(readlink -f "$0")")/mccli.sh.template" > "$(dirname "$(readlink -f "$0")")/mccli.sh"
 chmod 755 "$(dirname "$(readlink -f "$0")")/mccli.sh"
 
 set +e

@@ -4,5 +4,7 @@ export SCRIPT_ROOT="$(dirname "$(readlink -f "$0")")"
 
 ##PYTHON
 
+export MCCLI_PYTHON=${MCCLI_PYTHON:-"$python_path"}
+
 python "$SCRIPT_ROOT"/mccli.py "$@"
 
