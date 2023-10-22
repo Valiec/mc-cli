@@ -135,11 +135,10 @@ class Commands:
 			stderr_print("delete: mccli stop <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
-		self.config.check_server_exists(server_name)
-		server_id=self.config.servers(server_name)
+		self.config.servers.check_server_exists(server_name)
+		server_id=self.config.servers.get_server_id(server_name)
 		subprocess.run([self.config.SCRIPT_ROOT+"/commands/delete.sh", server_id])
-		del config.servers[server_name]
-		del config.servers_info[server_name]
+		config.servers.delete_server(server_name)
 
 	def start(self):
 		pass
@@ -188,8 +187,8 @@ class Commands:
 			stderr_print("usage: mccli stop <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
-		self.config.check_server_exists(server_name)
-		server_id=self.config.servers(server_name)
+		self.config.servers.check_server_exists(server_name)
+		server_id=self.config.servers.get_server_id(server_name)
 		subprocess.run([self.config.SCRIPT_ROOT+"/commands/cmd.sh", server_id, "stop"])
 
 	def logs(self):
@@ -198,8 +197,8 @@ class Commands:
 			stderr_print("usage: mccli logs <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
-		self.config.check_server_exists(server_name)
-		server_id=self.config.servers(server_name)
+		self.config.servers.check_server_exists(server_name)
+		server_id=self.config.servers.get_server_id(server_name)
 		subprocess.run([self.config.SCRIPT_ROOT+"/commands/logs.sh", server_id])
 
 	def rcon(self):
@@ -208,8 +207,8 @@ class Commands:
 			stderr_print("usage: mccli rcon <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
-		self.config.check_server_exists(server_name)
-		server_id=self.config.servers(server_name)
+		self.config.servers.check_server_exists(server_name)
+		server_id=self.config.servers.get_server_id(server_name)
 		subprocess.run([self.config.SCRIPT_ROOT+"/commands/cmd_interactive.sh", server_id])
 
 	def cmd(self):
@@ -224,8 +223,8 @@ class Commands:
 			sys.exit(1)
 		server_name = self.args[0]
 		cmd = self.args[1]
-		self.config.check_server_exists(server_name)
-		server_id=self.config.servers(server_name)
+		self.config.servers.check_server_exists(server_name)
+		server_id=self.config.servers.get_server_id(server_name)
 		subprocess.run([self.config.SCRIPT_ROOT+"/commands/cmd.sh", server_id, cmd])
 
 	def status(self):
@@ -234,42 +233,32 @@ class Commands:
 			stderr_print("usage: mccli status <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
-		self.config.check_server_exists(server_name)
-		server_id=self.config.servers(server_name)
+		self.config.servers.check_server_exists(server_name)
+		server_id=self.config.servers.get_server_id(server_name)
 		subprocess.run([self.config.SCRIPT_ROOT+"/commands/status.sh", server_id])
 
 	def info(self):
-		pass
-	"""
-		if (( $# < 1 )); then
-			log_error "info: missing server name"
-			echo "usage: mccli info <server name>" >&2
-			exit 1;
-		fi
-		server_name="$1"
-		check_server_exists "$server_name"
-		server_docker_id=${servers[$server_name]}
+		if len(self.args) < 1:
+			log_error("info: missing server name")
+			stderr_print("usage: mccli info <server name>")
+			sys.exit(1)
+		server_name = self.args[0]
+		self.config.servers.check_server_exists(server_name)
+		server_id=self.config.servers.get_server_id(server_name)
+		server_data=self.config.servers.get_server_data(server_name)
+		running_test = (subprocess.run([self.config.SCRIPT_ROOT+"/util/check_running.sh", server_id, server_data["data_dir"], bool_str(config.MCCLI_DOCKER)]).exitcode == 0)
+		running = "Yes" if running_test else "No"
 
-		docker ps --no-trunc 2>/dev/null | grep "$server_docker_id" 2>&1 >/dev/null
-
-		server_running="$?"
-
-		running="Yes"
-
-		if [ "$server_running" -gt 0 ]; then
-			running="No"
-		fi
-
-		echo "$server_name info:"
-		echo "Container ID: $server_docker_id"
-		echo "Running: $running"
-		echo "Port: $(cut -f 1 -d $'\t' <<<"${servers_info["$server_name"]}")"
-		echo "Data folder: $(cut -f 6 -d $'\t' <<<"${servers_info["$server_name"]}")"
-		echo "Type: $(cut -f 2 -d $'\t' <<<"${servers_info["$server_name"]}")"
-		echo "Minecraft version: $(cut -f 3 -d $'\t' <<<"${servers_info["$server_name"]}")"
-		echo "Java version: $(cut -f 4 -d $'\t' <<<"${servers_info["$server_name"]}")"
-		echo "Java home: $(cut -f 7 -d $'\t' <<<"${servers_info["$server_name"]}")"
-	"""
+		print(server_name+" info:")
+		if MCCLI_DOCKER:
+			print("Container ID: "+server_id)
+		print("Running: "+running)
+		print("Port: "+server_data["server_port"])
+		print("Data folder: "+server_data["data_path"])
+		print("Type: "+server_data["server_type"])
+		print("Minecraft version: "+server_data["server_version"])
+		print("Java version: "+server_data["java_version"])
+		print("Java home: "+server_data["java_home"])
 
 	def help(self):
 		subprocess.run([self.config.SCRIPT_ROOT+"/commands/help.sh"]+self.args)
@@ -278,5 +267,5 @@ class Commands:
 		print(self.config.MCCLI_VERSION)
 
 	def list(self):
-		for server in self.config.servers:
-			print(server+": "+servers[server])
+		for server in self.config.servers.get_server_names():
+			print(server+": "+self.config.servers.get_server_id(server))

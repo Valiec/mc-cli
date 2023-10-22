@@ -9,8 +9,6 @@ from config import Config
 
 config = Config()
 
-used_ports = []
-
 os.environ["MCCLI_VERSION"] = config.MCCLI_VERSION
 config.SCRIPT_ROOT = os.environ["SCRIPT_ROOT"]
 
@@ -74,8 +72,8 @@ def parse_config():
 	else:
 		with open(config.MCCLI_DIR+"/config") as config_file:
 			for line in config_file:
-				key = line.split["="][0]
-				value = "=".join(line.split["="][1:])
+				key = line.split("=")[0]
+				value = "=".join(line.split("=")[1:])
 				if key == "USE_DOCKER":
 					config.MCCLI_DOCKER = (value == "true")
 				elif key == "USE_SCREEN":
@@ -89,17 +87,14 @@ def parse_config():
 		subprocess.run(["python", "-m", "venv", config.MCCLI_DIR+"/venv"])
 		subprocess.run([config.MCCLI_DIR+"/venv/bin/pip", "-qq", "install", "mcrcon"])
 
-	with open(config.MCCLI_DIR+"/servers.conf") as servers_conf:
-		for line in servers_conf:
-			server_name = config.split["\t"][0]
-			server_id = config.split["\t"][1]
-			server_info = "\t".join(config.split["="][2:])
-			used_ports.append(config.split["\t"][2])
-			config.servers[server_name] = server_id
-			config.servers_info[server_name] = server_info
+	config.init_servers(config.MCCLI_DIR+"/servers.conf")
+	config.servers.read_servers_conf()
+
 
 def usage():
 	print("usage: mccli <subcommand> [args...]")
+
+parse_config()
 
 if len(sys.argv) == 1:
 	log_error("no subcommand specified")
@@ -130,7 +125,7 @@ elif action == "cmd":
 elif action == "status":
 	commands.status()
 elif action == "info":
-	print("info")
+	commands.info()
 elif action == "version":
 	commands.version()
 elif action == "help":

@@ -1,5 +1,6 @@
 import sys
 from utils import *
+from servers import Servers
 
 class Config:
 	MCCLI_VERSION = "1.0.0"
@@ -9,11 +10,7 @@ class Config:
 	MCCLI_SCREEN=None
 	MCCLI_EULA=None
 	SCRIPT_ROOT=None
-	servers = {}
-	servers_info = {}
+	servers = None
 
-
-	def check_server_exists(self, server_name):
-		if not server_name in self.servers:
-			log_error("server "+server_name+" does not exist")
-			sys.exit(1)
+	def init_servers(self, conf_path):
+		self.servers = Servers(conf_path)
