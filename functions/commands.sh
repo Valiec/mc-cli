@@ -80,10 +80,12 @@ create() {
 	fi
 
 	if [ MCCLI_DOCKER = "true" ]; then
-		bash "$SCRIPT_ROOT"/commands/create.sh "$port" "$data_path" "$server_type" "$server_version" "$java_version" "$rcon_password" > "$tmp_file";
+		#bash "$SCRIPT_ROOT"/commands/create.sh "$port" "$data_path" "$server_type" "$server_version" "$java_version" "$rcon_password" > "$tmp_file";
+		:
 		success="$?"
 	else
-		bash "$SCRIPT_ROOT"/commands/create_nodocker.sh "$port" "$data_path" "$server_type" "$server_version" "$java_version" "$rcon_password";
+		#bash "$SCRIPT_ROOT"/commands/create_nodocker.sh "$port" "$data_path" "$server_type" "$server_version" "$java_version" "$rcon_password";
+		:
 		success="$?"
 		echo "$server_name" > "$tmp_file";
 	fi
@@ -93,8 +95,21 @@ create() {
 		exit 1;
 	fi
 
+	echo "****"
+
+	for serverkey in "${!server_info[@]}"; do
+		echo "$serverkey"
+	done
+
+	echo "****"
+
+	echo $(cat "$tmp_file")
+	echo "$port	$server_type	$server_version	$java_version	$rcon_password	$data_path	$java_home"
+	echo "${server_info["foo"]}"
+	echo "$server_name"
 	servers["$server_name"]="$(cat "$tmp_file")"
 	server_info["$server_name"]="$port	$server_type	$server_version	$java_version	$rcon_password	$data_path	$java_home"
+	echo "${server_info["foo"]}"
 }
 
 delete() {
@@ -124,9 +139,10 @@ start() {
 	if [ "$MCCLI_DOCKER" = "true" ]; then
 		docker start "$server_docker_id" >/dev/null
 	else
+		echo "${servers_info["$server_name"]}"
 		data_dir="$(cut -f 6 -d $'\t' <<<"${servers_info["$server_name"]}")"
-		server_name="$(cut -f 3 -d $'\t' <<<"${servers_info["$server_name"]}")"
 		java_home="$(cut -f 7 -d $'\t' <<<"${servers_info["$server_name"]}")"
+		exit 1
 		if [ ! -e "$data_dir/eula.txt" ]; then
 			if [ "$MCCLI_EULA" = "true" ]; then
 				echo "eula=true" > "$data_dir/eula.txt";
@@ -144,6 +160,7 @@ start() {
 			    export MCCLI_EULA="true";
 			fi
 		fi
+		echo "about to start $server_name, $data_dir, $java_home"
 		bash "$SCRIPT_ROOT"/util/start_server.sh "$server_name" "$data_dir" "$java_home";
 	fi
 }

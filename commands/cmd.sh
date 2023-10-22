@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
-docker ps --no-trunc | grep "$1" >/dev/null
-
+if [ "$MCCLI_DOCKER" = "true" ]; then
+	docker ps --no-trunc | grep "$1" >/dev/null	
+else
+	[ -e "$data_dir/.running" ]
+fi
 server_running="$?"
 
 if [ "$server_running" -gt 0 ]; then

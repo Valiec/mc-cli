@@ -11,7 +11,7 @@ java_home="$5"
 rcon_pass="$6"
 mkdir -p "$dir"
 bash "$SCRIPT_ROOT/util/install_server.sh" -t "$type" -v "$version" -l "latest" "$dir"
-echo "rcon.password=$rcon_password" > "$dir/server.properties";
+echo "rcon.password=$rcon_pass" > "$dir/server.properties";
 echo "server-port=$port" >> "$dir/server.properties";
 echo "Created $type $version server, running on port $port" >&2
 
