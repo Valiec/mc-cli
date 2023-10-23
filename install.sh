@@ -15,7 +15,7 @@ if [ ! -e "$INSTALL_PATH" ]; then
 fi
 
 if [ -e "$INSTALL_PATH/mccli" ]; then
-	echo "mccli installer: $INSTALL_PATH/mccli already exists, exiting"
+	echo "mccli: $INSTALL_PATH/mccli already exists, exiting"
 	exit 1;
 fi
 
@@ -25,14 +25,12 @@ if [ ! -v MCCLI_PYTHON ]; then
 	elif which python3 > /dev/null; then
 		MCCLI_PYTHON="$(which python3)";
 	else
-		echo "mccli installer: python not found as 'python' or 'python3'"
+		echo "mccli: python not found as 'python' or 'python3'"
 		read -p "Enter path to Python interpreter: " MCCLI_PYTHON
 	fi
 fi
 
-echo "mccli installer: using python at $MCCLI_PYTHON"
-
-echo "Installing to $INSTALL_PATH/mccli"
+echo "mccli: using python at $MCCLI_PYTHON"
 
 sed "s!##PYTHON!python_path=\"$MCCLI_PYTHON\"!" "$(dirname "$(readlink -f "$0")")/mccli.sh.template" > "$(dirname "$(readlink -f "$0")")/mccli.sh"
 chmod 755 "$(dirname "$(readlink -f "$0")")/mccli.sh"
@@ -43,7 +41,7 @@ install_success="$?"
 set -e
 
 if [ "$install_success" -eq 0 ]; then
-	echo "Installed"
+	echo "mccli: installed to $INSTALL_PATH/mccli"
 else
-	echo "Install failed"
+	echo "mccli: install failed (attempted to install to $INSTALL_PATH/mccli)"
 fi
