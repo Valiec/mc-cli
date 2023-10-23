@@ -25,12 +25,12 @@ if [ ! -v MCCLI_PYTHON ]; then
 	elif which python3 > /dev/null; then
 		MCCLI_PYTHON="$(which python3)";
 	else
-		echo "mccli: python not found as 'python' or 'python3'"
+		echo "mccli installer: python not found as 'python' or 'python3'"
 		read -p "Enter path to Python interpreter: " MCCLI_PYTHON
 	fi
 fi
 
-echo "mccli: using python at $MCCLI_PYTHON"
+echo "mccli installer: using python at $MCCLI_PYTHON"
 
 echo "Installing to $INSTALL_PATH/mccli"
 
