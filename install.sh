@@ -4,7 +4,25 @@ set -e
 
 MAIN_SCRIPT="$(dirname "$(readlink -f "$0")")/mccli.sh"
 
-INSTALL_PATH="/usr/local/bin"
+INSTALL_PATH=${INSTALL_PATH:-"/opt"}
+
+LINK_PATH=${LINK_PATH:-"/usr/local/bin"}
+
+DO_SYMLINK="false"
+
+while getopts ':lL:' option; do
+	case "$option" in 
+		l) 
+			DO_SYMLINK="true"
+			;;
+		L) 
+			DO_SYMLINK="true"
+			LINK_PATH="$OPTARG"
+			;;
+		*) 
+			;;
+	esac
+done
 
 if [ -v "$1" ]; then
 	INSTALL_PATH="$1"
@@ -35,10 +53,27 @@ echo "mccli: using python at $MCCLI_PYTHON"
 sed "s!##PYTHON!python_path=\"$MCCLI_PYTHON\"!" "$(dirname "$(readlink -f "$0")")/mccli.sh.template" > "$(dirname "$(readlink -f "$0")")/mccli.sh"
 chmod 755 "$(dirname "$(readlink -f "$0")")/mccli.sh"
 
-set +e
-ln -s "$MAIN_SCRIPT" "$INSTALL_PATH/mccli";
-install_success="$?"
-set -e
+
+if [ "$DO_SYMLINK" = "true" ]; then
+	set +e
+	ln -s "$MAIN_SCRIPT" "$LINK_PATH/mccli";
+	install_success="$?"
+	set -e
+else
+	if [ -d "$INSTALL_PATH/mccli" ]; then
+		echo "mccli: $INSTALL_PATH/mccli_install directory already exists, exiting"
+		exit 1;
+	fi
+	mkdir "$INSTALL_PATH/mccli";
+	set +e
+	cp -r "$(dirname "$(readlink -f "$0")")/"* "$INSTALL_PATH/mccli";
+	install_success="$?"
+	touch "$INSTALL_PATH/mccli/.copy_install";
+	if [ ! "$LINK_PATH" = "none" ]; then
+		ln -s "$INSTALL_PATH/mccli/mccli.sh" "$LINK_PATH/mccli";
+	fi
+	set -e
+fi
 
 if [ "$install_success" -eq 0 ]; then
 	echo "mccli: installed to $INSTALL_PATH/mccli"
