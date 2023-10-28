@@ -10,8 +10,11 @@ class Servers:
 	def __init__(self, conf_path):
 		self.conf_path = conf_path
 
+	def server_exists(self, server_name):
+		return server_name in self.servers
+
 	def check_server_exists(self, server_name):
-		if not server_name in self.servers:
+		if not self.server_exists(server_name):
 			log_error("server "+server_name+" does not exist")
 			sys.exit(1)
 
@@ -25,10 +28,13 @@ class Servers:
 	def get_server_names(self):
 		return self.servers.keys()
 
-	get_server_info:
+	def get_server_info(self, server_name):
+		return self.servers_info[server_name]
 
 	def register_server(self, server_name, server_data):
 		self.servers[server_name] = server_data["server_id"]
+		if server_data["java_home"] is None:
+			server_data["java_home"] = ""
 		self.servers_data[server_name] = server_data
 		self.used_ports.append(server_data["server_port"])
 

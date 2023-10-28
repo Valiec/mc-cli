@@ -109,7 +109,7 @@ commands = Commands(config, sys.argv[2:])
 if action == "list":
 	commands.list()
 elif action == "create":
-	print("create")
+	commands.create()
 elif action == "delete":
 	commands.delete()
 elif action == "start":
