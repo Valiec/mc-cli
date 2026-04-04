@@ -15,7 +15,7 @@ while true; do
 	if [ "$MCCLI_DOCKER" = "true" ]; then
 		docker ps --no-trunc | grep "$1" >/dev/null	
 	else
-		[ -e "$data_dir/.running" ]
+		[ ! -e "$data_dir/.running" ]
 	fi
 	server_running="$?"
 

@@ -29,12 +29,10 @@ class Servers:
 		return self.servers.keys()
 
 	def get_server_info(self, server_name):
-		return self.servers_info[server_name]
+		return self.servers_data[server_name]
 
 	def register_server(self, server_name, server_data):
 		self.servers[server_name] = server_data["server_id"]
-		if server_data["java_home"] is None:
-			server_data["java_home"] = ""
 		self.servers_data[server_name] = server_data
 		self.used_ports.append(server_data["server_port"])
 
@@ -57,7 +55,8 @@ class Servers:
 
 	def write_servers_conf(self):
 		with open(self.conf_path, "w") as servers_conf:
-			for server in self.get_server_names:
+			for server_name in self.get_server_names():
+				server_data = self.get_server_info(server_name)
 				info_list = [server_name, server_data["server_id"], server_data["server_port"], server_data["server_type"], server_data["server_version"], 
 				server_data["java_version"], server_data["rcon_password"], server_data["data_path"], server_data["java_home"]]
 				info_str = "\t".join(info_list)

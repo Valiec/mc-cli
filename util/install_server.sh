@@ -4,7 +4,7 @@ set -e
 
 mc_version="latest"
 
-server_type="VANILLA"
+server_type="vanilla"
 
 loader_version="latest"
 

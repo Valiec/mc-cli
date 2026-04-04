@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-export SCRIPT_ROOT="$(dirname "$(readlink -f "$0")")"
+SCRIPT_ROOT="$(dirname "$(readlink -f "$0")")"
 
-##PYTHON
+export SCRIPT_ROOT
 
-export MCCLI_PYTHON=${MCCLI_PYTHON:-"$python_path"}
+source "##VENV##/bin/activate"
 
-"$MCCLI_PYTHON" "$SCRIPT_ROOT"/mccli.py "$@"
+python3 "$SCRIPT_ROOT"/mccli.py "$@"
 

@@ -3,7 +3,9 @@ import sys
 import argparse
 import os
 import base64
+from mctools import RCONClient
 
+from util.create_server import create_server
 # other parts of MC-CLI
 from utils import *
 from config import Config
@@ -19,8 +21,8 @@ class Commands:
 
 	def create(self):
 		parser = argparse.ArgumentParser(prog="mccli")
-		parser.add_argument("-t", "--type", default="VANILLA", help="The type of server to create.")
-		parser.add_argument("-v", "--version", default="LATEST", help="The Minecraft version of the server to be created.")
+		parser.add_argument("-t", "--type", default="vanilla", help="The type of server to create.")
+		parser.add_argument("-v", "--version", default="latest", help="The Minecraft version of the server to be created.")
 		parser.add_argument("-j", "--java-version", default="latest", help="The Java version for the server to be created. Only used for Docker installations.")
 		parser.add_argument("-J", "--java-home", default=os.getenv("JAVA_HOME"), help="The JAVA_HOME location for the server to be created. Only used for non-Docker installations.")
 		parser.add_argument("-r", "--rcon-password", help="A custom password for the RCON remote console. If you are not using RCON elsewhere, \
@@ -28,22 +30,28 @@ class Commands:
 		parser.add_argument("-p", "--data-path", help="The Minecraft version of the server to be created.")
 		parser.add_argument("server_name", help="The name of the server to be created.")
 		parser.add_argument("port", help="The port the new server will run on.")
+		parser.add_argument("rcon_port", help="The port that will be used for the RCON console.")
 		args_arr = parser.parse_args(self.args)
 
-		self.config.servers.check_server_exists(args_arr.server_name)
+		if args_arr.java_home is None:
+			args_arr.java_home = ""
+
+		if self.config.servers.server_exists(args_arr.server_name):
+			log_error("server "+args_arr.server_name+" already exists")
+			sys.exit(1)
 
 		data_path = args_arr.data_path
 
 		if data_path is None:
-			data_path = os.getenv(MCCLI_DIR)+"/servers/"+args_arr.server_name
+			data_path = os.getenv("MCCLI_DIR")+"/servers/"+args_arr.server_name
 
 		if os.path.exists(data_path) and not os.path.isdir(data_path):
 			log_error("data path "+data_path+" already exists and is not a directory")
 			sys.exit(1)
 
-		os.mkdirs(data_path, exist_ok=True)
+		os.makedirs(data_path, exist_ok=True)
 
-		if args.rcon_password is None:
+		if args_arr.rcon_password is None:
 			if os.path.exists(data_path+"/server.properties"):
 				with open(data_path+"/server.properties") as server_properties:
 					for line_s in server_properties:
@@ -51,14 +59,15 @@ class Commands:
 						if line[0] == "rcon.password":
 							rcon_password = line[1].strip("\n")
 			else:
-				rcon_password = base64.b64encode(os.urandom(32))
+				rcon_password = base64.b64encode(os.urandom(32)).decode('utf-8')
 
 		server_creation_proc = None
 
 		if self.config.MCCLI_DOCKER:
-			server_creation_proc = subprocess.run(["bash", self.config.SCRIPT_ROOT+"/commands/create.sh", args_arr.port, args_arr.data_path, args_arr.type, args_arr.version, args_arr.java_version, rcon_password], capture_output=True)
+			server_creation_proc = subprocess.run(["bash", self.config.SCRIPT_ROOT+"/commands/create.sh", args_arr.port, data_path, args_arr.type.upper(), args_arr.version.upper(), args_arr.java_version, rcon_password], stdout=subprocess.PIPE, stderr=sys.stderr)
+			server_id = server_creation_proc.stdout.strip(b"\n")
 		else:
-			server_creation_proc = subprocess.run(["bash", self.config.SCRIPT_ROOT+"/commands/create_nodocker.sh", args_arr.port, args_arr.data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password], capture_output=True)
+			create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password)
 
 		success = server_creation_proc.returncode
 
@@ -66,29 +75,30 @@ class Commands:
 			log_error("server creation failed")
 			sys.exit(1)
 
-		server_id = server_creation_proc.stdout.strip("\n")
 
-		config.servers.register_server(server_name, {
-					"server_id": server_id,
-					"server_port": args_arr.port,
-					"server_type": args_arr.type,
-					"server_version": args_arr.version,
-					"java_version": args_arr.java_version,
-					"rcon_password": rcon_password,
-					"data_path": args_arr.data_path,
-					"java_home": args_arr.java_home
+
+		self.config.servers.register_server(args_arr.server_name, {
+					"server_id": str(server_id),
+					"server_port": str(args_arr.port),
+					"server_type": str(args_arr.type),
+					"server_version": str(args_arr.version),
+					"java_version": str(args_arr.java_version),
+					"rcon_password": str(rcon_password),
+					"data_path": str(data_path),
+					"java_home": str(args_arr.java_home)
 				})
+		self.config.servers.write_servers_conf()
 
 	def delete(self):
 		if len(self.args) < 1:
 			log_error("delete: missing server name")
-			stderr_print("delete: mccli stop <server name>")
+			stderr_print("delete: mccli delete <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
 		self.config.servers.check_server_exists(server_name)
 		server_id=self.config.servers.get_server_id(server_name)
 		subprocess.run([self.config.SCRIPT_ROOT+"/commands/delete.sh", server_id])
-		config.servers.delete_server(server_name)
+		self.config.servers.delete_server(server_name)
 
 	def start(self):
 		if len(self.args) < 1:
@@ -104,7 +114,7 @@ class Commands:
 			subprocess.run(["docker", "start", server_id])
 		else:
 			server_info = self.config.servers.get_server_info(server_name)
-			data_dir = server_info["data_dir"]
+			data_dir = server_info["data_path"]
 			java_home = server_info["java_home"]
 
 			if not os.path.exists(data_dir+"/eula.txt"):
@@ -119,11 +129,11 @@ class Commands:
 					print("Your EULA agreement will been saved for future servers.")
 					with open(data_dir+"/eula.txt", "w") as eula_file:
 						eula_file.write("eula=true\n")
-
 					# User has accepted the EULA, save this and don't prompt again
 					self.config.MCCLI_EULA = True
+					self.config.write_config()
 
-			subprocess.run(["bash", self.config.SCRIPT_ROOT+"/util/start_server.sh", server_name, data_dir, java_home])
+			subprocess.run(["bash", self.config.SCRIPT_ROOT+"/util/start_server.sh", server_name, data_dir, java_home], stdout=sys.stdout, stderr=sys.stderr)
 
 	def stop(self):
 		if len(self.args) < 1:
@@ -153,7 +163,19 @@ class Commands:
 		server_name = self.args[0]
 		self.config.servers.check_server_exists(server_name)
 		server_id=self.config.servers.get_server_id(server_name)
-		subprocess.run([self.config.SCRIPT_ROOT+"/commands/cmd_interactive.sh", server_id])
+		server_info=self.config.servers.get_server_info(server_name)
+		if self.config.MCCLI_DOCKER:
+			subprocess.run([self.config.SCRIPT_ROOT+"/commands/cmd_interactive.sh", server_id])
+		else:
+			print(["127.0.0.1", server_info["rcon_password"], int(server_info["server_port"])])
+			rcon = RCONClient("127.0.0.1")
+			rcon.login(server_info["rcon_password"])
+			try:
+				while True:
+					cmd = input("rcon> ")
+					print(rcon.command(cmd))
+			except KeyboardInterrupt:
+				sys.exit(0)
 
 	def cmd(self):
 		pass
@@ -190,11 +212,11 @@ class Commands:
 		self.config.servers.check_server_exists(server_name)
 		server_id=self.config.servers.get_server_id(server_name)
 		server_data=self.config.servers.get_server_info(server_name)
-		running_test = (subprocess.run([self.config.SCRIPT_ROOT+"/util/check_running.sh", server_id, server_data["data_dir"], bool_str(config.MCCLI_DOCKER)]).exitcode == 0)
+		running_test = (subprocess.run([self.config.SCRIPT_ROOT+"/util/check_running.sh", server_id, server_data["data_path"], bool_str(self.config.MCCLI_DOCKER)]).exitcode == 0)
 		running = "Yes" if running_test else "No"
 
 		print(server_name+" info:")
-		if MCCLI_DOCKER:
+		if self.config.MCCLI_DOCKER:
 			print("Container ID: "+server_id)
 		print("Running: "+running)
 		print("Port: "+server_data["server_port"])

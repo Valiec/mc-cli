@@ -23,5 +23,6 @@ if [ "$download_hash" != "$downloaded_shasum" ]; then
     read -p "continue? [Y/n]: " answer
     if [ "$answer" != "Y" ]; then
         echo "Exiting." >&2
+        exit 1;
     fi
 fi

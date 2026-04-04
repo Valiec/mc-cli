@@ -14,8 +14,8 @@ if len(sys.argv) >= 4:
 
 with MCRcon("localhost:"+port, rcon_password) as server:
 	if cmd is not None:
-		print(mcr.command("/"+cmd))
+		print(server.command("/"+cmd))
 	else:
 		while True:
 			cmd = input("rcon> ")
-			print(mcr.command("/"+cmd))
+			print(server.command("/"+cmd))
