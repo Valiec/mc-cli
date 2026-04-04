@@ -28,9 +28,9 @@ def install_vanilla(download_dir, version_id):
 	if version_id in versions:
 		version_url = versions[version_id]["url"]
 	elif version_id == "latest":
-		version_url = versions[manifest["latest"]["url"]]
+		version_url = versions[latest]["url"]
 	elif version_id == "latest_snapshot":
-		version_url = versions[manifest["latest_snapshot"]["url"]]
+		version_url = versions[latest_snapshot]["url"]
 	else:
 		sys.stderr.write("mccli: error: no such version \'"+version_id+"\'\n")
 		sys.exit(1)
@@ -40,13 +40,13 @@ def install_vanilla(download_dir, version_id):
 			version_resp.raise_for_status()
 			version_json = version_resp.json()
 			server_download = version_json["downloads"]["server"]
-			print(server_download["sha1"] + "\t" + server_download["url"])
+			#print(server_download["sha1"] + "\t" + server_download["url"])
 	except HTTPError:
 		sys.stderr.write("mccli: error: failed to download version data for \'"+version_id+"\'\n")
 		sys.exit(1)
 
 	try:
-		with requests.get(server_download, stream=True) as jar_stream:
+		with requests.get(server_download["url"], stream=True) as jar_stream:
 			jar_stream.raise_for_status()
 			with open(os.path.join(download_dir, "server.jar"), 'wb') as f:
 				for chunk in jar_stream.iter_content(chunk_size=8192):
@@ -57,9 +57,9 @@ def install_vanilla(download_dir, version_id):
 		sys.exit(1)
 
 	with open(os.path.join(download_dir, "server.jar"), "rb") as f:
-		sha1 = hashlib.file_digest(f, "sha1")
+		sha1 = hashlib.file_digest(f, "sha1").hexdigest()
 		if sha1 != server_download["sha1"]:
-			sys.stderr.write(f"mccli: warning: sha1 hash of downloaded file {sha1} does not match provided sum from Mojang {server_download['sha1']}")
+			sys.stderr.write(f"mccli: warning: sha1 hash of downloaded file {sha1} does not match provided sum from Mojang {server_download['sha1']}\n")
 			ignore = input("continue? [Y/n] ")
 			if ignore != "Y":
 				sys.stderr.write("Exiting.")

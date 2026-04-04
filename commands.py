@@ -3,6 +3,8 @@ import sys
 import argparse
 import os
 import base64
+import uuid
+
 from mctools import RCONClient
 
 from util.create_server import create_server
@@ -27,11 +29,17 @@ class Commands:
 		parser.add_argument("-J", "--java-home", default=os.getenv("JAVA_HOME"), help="The JAVA_HOME location for the server to be created. Only used for non-Docker installations.")
 		parser.add_argument("-r", "--rcon-password", help="A custom password for the RCON remote console. If you are not using RCON elsewhere, \
 			do not expose the RCON port to the internet, and skip this option to have MCCLI generate a random RCON password.")
-		parser.add_argument("-p", "--data-path", help="The Minecraft version of the server to be created.")
+		parser.add_argument("-d", "--data-path", help="The path to the server's install directory.")
+		parser.add_argument("-R", "--rcon-port", default=-1, help="The port that will be used for the RCON console.")
+		parser.add_argument("-p", "--port", default=-1, help="The port the new server will run on (default: next free port).")
 		parser.add_argument("server_name", help="The name of the server to be created.")
-		parser.add_argument("port", help="The port the new server will run on.")
-		parser.add_argument("rcon_port", help="The port that will be used for the RCON console.")
 		args_arr = parser.parse_args(self.args)
+
+		if args_arr.rcon_port == -1:
+			args_arr.rcon_port = self.config.servers.get_free_rcon_port()
+
+		if args_arr.port == -1:
+			args_arr.port = self.config.servers.get_free_port()
 
 		if args_arr.java_home is None:
 			args_arr.java_home = ""
@@ -61,17 +69,18 @@ class Commands:
 			else:
 				rcon_password = base64.b64encode(os.urandom(32)).decode('utf-8')
 
-		server_creation_proc = None
-
 		if self.config.MCCLI_DOCKER:
 			server_creation_proc = subprocess.run(["bash", self.config.SCRIPT_ROOT+"/commands/create.sh", args_arr.port, data_path, args_arr.type.upper(), args_arr.version.upper(), args_arr.java_version, rcon_password], stdout=subprocess.PIPE, stderr=sys.stderr)
 			server_id = server_creation_proc.stdout.strip(b"\n")
+			success = server_creation_proc.returncode == 0
 		else:
-			create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password)
+			success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password)
+			server_id = uuid.uuid4().hex
 
-		success = server_creation_proc.returncode
 
-		if success > 0:
+
+
+		if not success:
 			log_error("server creation failed")
 			sys.exit(1)
 
@@ -85,7 +94,8 @@ class Commands:
 					"java_version": str(args_arr.java_version),
 					"rcon_password": str(rcon_password),
 					"data_path": str(data_path),
-					"java_home": str(args_arr.java_home)
+					"java_home": str(args_arr.java_home),
+					"rcon_port": str(args_arr.rcon_port)
 				})
 		self.config.servers.write_servers_conf()
 
@@ -97,8 +107,10 @@ class Commands:
 		server_name = self.args[0]
 		self.config.servers.check_server_exists(server_name)
 		server_id=self.config.servers.get_server_id(server_name)
-		subprocess.run([self.config.SCRIPT_ROOT+"/commands/delete.sh", server_id])
+		server_path = self.config.servers.get_server_info(server_name)["data_path"]
+		subprocess.run([self.config.SCRIPT_ROOT+"/commands/delete.sh", server_id, server_path])
 		self.config.servers.delete_server(server_name)
+		self.config.servers.write_servers_conf() # write out the change
 
 	def start(self):
 		if len(self.args) < 1:
@@ -167,7 +179,7 @@ class Commands:
 		if self.config.MCCLI_DOCKER:
 			subprocess.run([self.config.SCRIPT_ROOT+"/commands/cmd_interactive.sh", server_id])
 		else:
-			print(["127.0.0.1", server_info["rcon_password"], int(server_info["server_port"])])
+			#print(["127.0.0.1", server_info["rcon_password"], int(server_info["server_port"])])
 			rcon = RCONClient("127.0.0.1")
 			rcon.login(server_info["rcon_password"])
 			try:

@@ -14,7 +14,7 @@ config.SCRIPT_ROOT = os.environ["SCRIPT_ROOT"]
 
 def write_config():
 	# rewrite the config file
-	with open(config.MCCLI_DIR+"/config", "w") as config_file:
+	with open(config.MCCLI_DIR+"/config.conf", "w") as config_file:
 		config.write("VERSION="+config.MCCLI_VERSION+"\n")
 		config.write("USE_DOCKER="+config.MCCLI_DOCKER+"\n")
 		config.write("USE_SCREEN="+config.MCCLI_SCREEN+"\n")

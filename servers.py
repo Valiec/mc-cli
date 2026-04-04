@@ -5,10 +5,23 @@ class Servers:
 	servers = {}
 	servers_data = {}
 	used_ports = []
+	used_rcon_ports = []
 	conf_path = None
 
 	def __init__(self, conf_path):
 		self.conf_path = conf_path
+
+	def get_free_port(self):
+		port_num = 25565
+		while port_num in self.used_ports or port_num in self.used_rcon_ports:
+			port_num += 1
+		return port_num
+
+	def get_free_rcon_port(self):
+		port_num = 25575
+		while port_num in self.used_rcon_ports or port_num in self.used_ports:
+			port_num += 1
+		return port_num
 
 	def server_exists(self, server_name):
 		return server_name in self.servers
@@ -20,7 +33,7 @@ class Servers:
 
 	def delete_server(self, server_name):
 		del self.servers[server_name]
-		del self.servers_info[server_name]
+		del self.servers_data[server_name]
 
 	def get_server_id(self, server_name):
 		return self.servers[server_name]
@@ -35,6 +48,7 @@ class Servers:
 		self.servers[server_name] = server_data["server_id"]
 		self.servers_data[server_name] = server_data
 		self.used_ports.append(server_data["server_port"])
+		self.used_rcon_ports.append(server_data["rcon_port"])
 
 	def read_servers_conf(self):
 		with open(self.conf_path) as servers_conf:
@@ -49,7 +63,8 @@ class Servers:
 					"java_version": server_data_str[5],
 					"rcon_password": server_data_str[6],
 					"data_path": server_data_str[7],
-					"java_home": server_data_str[8]
+					"java_home": server_data_str[8],
+					"rcon_port": server_data_str[9]
 				}
 				self.register_server(server_name, server_data)
 
@@ -58,7 +73,7 @@ class Servers:
 			for server_name in self.get_server_names():
 				server_data = self.get_server_info(server_name)
 				info_list = [server_name, server_data["server_id"], server_data["server_port"], server_data["server_type"], server_data["server_version"], 
-				server_data["java_version"], server_data["rcon_password"], server_data["data_path"], server_data["java_home"]]
+				server_data["java_version"], server_data["rcon_password"], server_data["data_path"], server_data["java_home"], server_data["rcon_port"]]
 				info_str = "\t".join(info_list)
 				servers_conf.write(info_str+"\n")
 
