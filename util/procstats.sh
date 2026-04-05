@@ -1,0 +1,1 @@
+ps aux "$1" | tail -n 1 | sed -E "s/[[:space:]]+/\t/g"

@@ -99,8 +99,6 @@ elif action == "stop":
 	commands.stop()
 elif action == "logs":
 	commands.logs()
-elif action == "rcon":
-	commands.rcon()
 elif action == "cmd":
 	commands.cmd()
 elif action == "status":

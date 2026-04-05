@@ -108,7 +108,7 @@ class Commands:
 		self.config.servers.check_server_exists(server_name)
 		server_id=self.config.servers.get_server_id(server_name)
 		server_path = self.config.servers.get_server_info(server_name)["data_path"]
-		subprocess.run([self.config.SCRIPT_ROOT+"/commands/delete.sh", server_id, server_path])
+		#subprocess.run([self.config.SCRIPT_ROOT+"/commands/delete.sh", server_id, server_path])
 		self.config.servers.delete_server(server_name)
 		self.config.servers.write_servers_conf() # write out the change
 
@@ -154,8 +154,7 @@ class Commands:
 			sys.exit(1)
 		server_name = self.args[0]
 		self.config.servers.check_server_exists(server_name)
-		server_id=self.config.servers.get_server_id(server_name)
-		subprocess.run([self.config.SCRIPT_ROOT+"/commands/cmd.sh", server_id, "stop"])
+		print(self.config.servers.get_server(server_name).command("stop"))
 
 	def logs(self):
 		if len(self.args) < 1:
@@ -167,43 +166,20 @@ class Commands:
 		server_id=self.config.servers.get_server_id(server_name)
 		subprocess.run([self.config.SCRIPT_ROOT+"/commands/logs.sh", server_id])
 
-	def rcon(self):
-		if len(self.args) < 1:
-			log_error("rcon: missing server name")
-			stderr_print("usage: mccli rcon <server name>")
-			sys.exit(1)
-		server_name = self.args[0]
-		self.config.servers.check_server_exists(server_name)
-		server_id=self.config.servers.get_server_id(server_name)
-		server_info=self.config.servers.get_server_info(server_name)
-		if self.config.MCCLI_DOCKER:
-			subprocess.run([self.config.SCRIPT_ROOT+"/commands/cmd_interactive.sh", server_id])
-		else:
-			#print(["127.0.0.1", server_info["rcon_password"], int(server_info["server_port"])])
-			rcon = RCONClient("127.0.0.1")
-			rcon.login(server_info["rcon_password"])
-			try:
-				while True:
-					cmd = input("rcon> ")
-					print(rcon.command(cmd))
-			except KeyboardInterrupt:
-				sys.exit(0)
-
 	def cmd(self):
-		pass
-		if len(self.args) < 1:
-			log_error("cmd: missing server name")
-			stderr_print("usage: mccli cmd <server name> <command>")
-			sys.exit(1)
-		elif len(self.args) < 1:
-			log_error("cmd: missing command")
-			stderr_print("usage: mccli cmd <server name> <command>")
-			sys.exit(1)
-		server_name = self.args[0]
-		cmd = self.args[1]
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("-c", "--cmd", help="The command to execute. Opens an interactive console if not provided.")
+		parser.add_argument("server_name", help="The name of the server to run the command on.")
+		args_arr = parser.parse_args(self.args)
+
+		server_name = args_arr.server_name
 		self.config.servers.check_server_exists(server_name)
-		server_id=self.config.servers.get_server_id(server_name)
-		subprocess.run([self.config.SCRIPT_ROOT+"/commands/cmd.sh", server_id, cmd])
+		if args_arr.cmd is not None:
+			cmds = args_arr.cmd.split("|")
+			for cmd in cmds:
+				print(self.config.servers.get_server(server_name).command(cmd.strip()))
+		else:
+			self.config.servers.get_server(server_name).command()
 
 	def status(self):
 		if len(self.args) < 1:
@@ -212,8 +188,14 @@ class Commands:
 			sys.exit(1)
 		server_name = self.args[0]
 		self.config.servers.check_server_exists(server_name)
-		server_id=self.config.servers.get_server_id(server_name)
-		subprocess.run([self.config.SCRIPT_ROOT+"/commands/status.sh", server_id])
+		server = self.config.servers.get_server(server_name)
+		server_data = server.get_server_data()
+		query = server.query()
+		pid = server.get_pid()
+		proc_data = subprocess.run(["bash", self.config.SCRIPT_ROOT+"/util/procstats.sh", str(pid)], text=True, capture_output=True).stdout.strip().split("\t")
+		print(f"Version: {server_data['server_version']}\nPlayers Online: {query['numplayers']}/{query['maxplayers']}\nMOTD: {query['motd']}")
+		print(f"PID: {pid}, Started: {proc_data[8]}\n%CPU: {proc_data[2]}, %MEM: {proc_data[3]}")
+		print(self.config.servers.get_server(server_name).command("list"))
 
 	def info(self):
 		if len(self.args) < 1:

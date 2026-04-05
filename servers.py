@@ -1,11 +1,79 @@
+import os
+import shutil
 import sys
+import time
+
+from mctools import RCONClient
+from mctools import QUERYClient
+
 from utils import *
+
+class Server:
+	server_name = None
+	server_data = None
+
+	def __init__(self, server_name, server_data):
+		self.server_name = server_name
+		self.server_data = server_data
+
+	def get_server_id(self):
+		return self.server_data["server_id"]
+
+	def get_server_data(self):
+		return self.server_data
+
+	def delete(self):
+		if os.path.exists(os.path.join(self.server_data["data_path"])):
+			if os.path.exists(os.path.join(self.server_data["data_path"], ".running")):
+				with open(os.path.join(self.server_data["data_path"], ".running")) as f:
+					self.command("stop")
+			while os.path.exists(os.path.join(self.server_data["data_path"], ".running")):
+				time.sleep(1)
+			shutil.rmtree(os.path.join(self.server_data["data_path"]))
+
+
+	def is_running(self):
+		pass
+
+	def query(self):
+		query = QUERYClient('127.0.0.1', port=self.server_data["server_port"])
+		stats = query.get_basic_stats()
+		query.stop()
+		return stats
+
+	def get_pid(self):
+		if os.path.exists(os.path.join(self.server_data["data_path"],".running")):
+			with open(os.path.join(self.server_data["data_path"],".running")) as f:
+				return int(f.read().strip())
+		else:
+			return None
+
+	def command(self, command=None):
+		rcon = RCONClient("127.0.0.1", port=int(self.server_data["rcon_port"]))
+		rcon.login(self.server_data["rcon_password"])
+		resp = None
+		if command is None:
+			try:
+				while True:
+					cmd = input("rcon> ")
+					print(rcon.command(cmd))
+			except KeyboardInterrupt:
+				sys.exit(0)
+		else:
+			resp = rcon.command(command)
+		rcon.stop()
+		return resp
+
+	def start(self):
+		pass
+
+	def stop(self):
+		self.command("stop")
+
 
 class Servers:
 	servers = {}
-	servers_data = {}
 	used_ports = []
-	used_rcon_ports = []
 	conf_path = None
 
 	def __init__(self, conf_path):
@@ -13,13 +81,13 @@ class Servers:
 
 	def get_free_port(self):
 		port_num = 25565
-		while port_num in self.used_ports or port_num in self.used_rcon_ports:
+		while port_num in self.used_ports:
 			port_num += 1
 		return port_num
 
 	def get_free_rcon_port(self):
 		port_num = 25575
-		while port_num in self.used_rcon_ports or port_num in self.used_ports:
+		while port_num in self.used_ports:
 			port_num += 1
 		return port_num
 
@@ -32,28 +100,30 @@ class Servers:
 			sys.exit(1)
 
 	def delete_server(self, server_name):
+		self.servers[server_name].delete()
 		del self.servers[server_name]
-		del self.servers_data[server_name]
 
 	def get_server_id(self, server_name):
+		return self.servers[server_name].get_server_id()
+
+	def get_server(self, server_name):
 		return self.servers[server_name]
 
 	def get_server_names(self):
 		return self.servers.keys()
 
 	def get_server_info(self, server_name):
-		return self.servers_data[server_name]
+		return self.servers[server_name].get_server_data()
 
 	def register_server(self, server_name, server_data):
-		self.servers[server_name] = server_data["server_id"]
-		self.servers_data[server_name] = server_data
+		self.servers[server_name] = Server(server_name, server_data)
 		self.used_ports.append(server_data["server_port"])
-		self.used_rcon_ports.append(server_data["rcon_port"])
+		self.used_ports.append(server_data["rcon_port"])
 
 	def read_servers_conf(self):
 		with open(self.conf_path) as servers_conf:
 			for line in servers_conf:
-				server_data_str = line.split("\t")
+				server_data_str = line.strip().split("\t")
 				server_name = server_data_str[0]
 				server_data = {
 					"server_id": server_data_str[1],
