@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 docker ps --no-trunc | grep "$1" >/dev/null
-
 server_running="$?"
 
 if [ "$server_running" -gt 0 ]; then

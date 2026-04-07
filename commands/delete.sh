@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
-docker ps --no-trunc | grep "$1" >/dev/null
-
+if [ "$MCCLI_DOCKER" = "true" ]; then
+	docker ps --no-trunc | grep "$1" >/dev/null	
+else
+	[ -e "$data_dir/.running" ]
+fi
 server_running="$?"
 
 if [ "$server_running" -eq 0 ]; then
@@ -17,5 +20,11 @@ if [ "$server_running" -eq 0 ]; then
 		sleep 5;
 	done
 fi
-docker rm "$1"
+
+if [ "$MCCLI_DOCKER" = "true" ]; then
+	docker rm "$1"
+fi
+
+rm -rf "$2"
+
 echo "Deleted server $1" >&2

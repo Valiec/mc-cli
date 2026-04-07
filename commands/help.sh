@@ -21,9 +21,7 @@ if (( $# < 1 )); then
 
 	    logs:	Shows the logs for a Minecraft server.
 
-	    rcon:	Opens an interactive RCON console for a Minecraft server.
-
-	    cmd:	Sends the given command to the server using RCON.
+	    cmd:	Sends the given command to the server, or opens an interactive RCON console.
 
 	    status:	Displays live status info for a Minecraft server.
 
@@ -79,12 +77,8 @@ else
 			echo "Shows the logs for a Minecraft server."
 			echo "usage: mccli logs <server name>"  
 			;;
-		"rcon")
-			echo "Opens an interactive RCON console for a Minecraft server." 
-			echo "usage: mccli rcon <server name>" 
-			;;
 		"cmd")
-			echo "Sends the given command to the server using RCON." 
+			echo "Sends the given command to the server using RCON, or if no command is given, opens an RCON console."
 			echo "usage: mccli cmd <server name> <command>" 
 			;;
 		"status")

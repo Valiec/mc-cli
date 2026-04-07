@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+SCRIPT_ROOT="$(dirname "$(readlink -f "$0")")"
+
+export SCRIPT_ROOT
+
+source "##VENV##/bin/activate"
+
+python3 "$SCRIPT_ROOT"/mccli.py "$@"
+
