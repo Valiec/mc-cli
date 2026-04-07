@@ -75,6 +75,8 @@ class Commands:
 			success = server_creation_proc.returncode == 0
 		else:
 			success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password)
+			if success:
+				args_arr.version = success
 			server_id = uuid.uuid4().hex
 
 
@@ -175,7 +177,7 @@ class Commands:
 		server_name = args_arr.server_name
 		self.config.servers.check_server_exists(server_name)
 		if args_arr.cmd is not None:
-			cmds = args_arr.cmd.split("|")
+			cmds = args_arr.cmd.split(self.config.MCCLI_DELIMITER)
 			for cmd in cmds:
 				print(self.config.servers.get_server(server_name).command(cmd.strip()))
 		else:

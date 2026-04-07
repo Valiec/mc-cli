@@ -25,12 +25,13 @@ def install_vanilla(download_dir, version_id):
 	for entry in manifest["versions"]:
 		versions[entry["id"]] = entry
 
+	if version_id == "latest":
+		version_id = latest
+	elif version_id == "latest_snapshot":
+		version_id = latest_snapshot
+
 	if version_id in versions:
 		version_url = versions[version_id]["url"]
-	elif version_id == "latest":
-		version_url = versions[latest]["url"]
-	elif version_id == "latest_snapshot":
-		version_url = versions[latest_snapshot]["url"]
 	else:
 		sys.stderr.write("mccli: error: no such version \'"+version_id+"\'\n")
 		sys.exit(1)
@@ -64,6 +65,7 @@ def install_vanilla(download_dir, version_id):
 			if ignore != "Y":
 				sys.stderr.write("Exiting.")
 				sys.exit(1)
+	return version_id
 
 if __name__ == "__main__":
 	download_dir_param = sys.argv[1]
