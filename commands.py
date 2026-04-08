@@ -63,7 +63,7 @@ class Commands:
 			else:
 				rcon_password = base64.b64encode(os.urandom(32)).decode('utf-8')
 
-		success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password)
+		success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password, args_arr.rcon_port)
 		if success:
 			args_arr.version = success
 		server_id = uuid.uuid4().hex
@@ -77,7 +77,6 @@ class Commands:
 					"server_port": str(args_arr.port),
 					"server_type": str(args_arr.type),
 					"server_version": str(args_arr.version),
-					"java_version": str(args_arr.java_version),
 					"rcon_password": str(rcon_password),
 					"data_path": str(data_path),
 					"java_home": str(args_arr.java_home),
@@ -176,6 +175,7 @@ class Commands:
 			print(self.config.servers.get_server(server_name).command("list"))
 		else:
 			print(f"Server {server_name} not running.")
+
 	def info(self):
 		if len(self.args) < 1:
 			log_error("info: missing server name")
@@ -190,10 +190,10 @@ class Commands:
 		print(server_name+" info:")
 		print("Running: "+running)
 		print("Port: "+server_data["server_port"])
+		print("RCON Port: "+server_data["rcon_port"])
 		print("Data folder: "+server_data["data_path"])
 		print("Type: "+server_data["server_type"])
 		print("Minecraft version: "+server_data["server_version"])
-		print("Java version: "+server_data["java_version"])
 		print("Java home: "+server_data["java_home"])
 
 	def help(self):
@@ -203,5 +203,29 @@ class Commands:
 		print(self.config.MCCLI_VERSION)
 
 	def list(self):
-		for server in self.config.servers.get_server_names():
-			print(server+": "+self.config.servers.get_server_id(server))
+
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("-l", "--long", action="store_true", help="List servers in long format")
+		parser.add_argument("-n", "--name-only", action="store_true", help="List only server names")
+		args_arr = parser.parse_args(self.args)
+
+		if args_arr.long:
+			for server_name in self.config.servers.get_server_names():
+				server = self.config.servers.get_server(server_name)
+				data = server.get_server_data()
+				print(
+					server_name + "\t" +
+					("RUNNING" if server.running() else "       ") + "\t" +
+					data["server_port"] + "\t" +
+					data["server_version"] + "\t" +
+					data["server_type"] + "\t" +
+					server.path() + "\t"
+				)
+		elif args_arr.name_only:
+			for server in self.config.servers.get_server_names():
+				print(server)
+		else:
+			for server_name in self.config.servers.get_server_names():
+				server = self.config.servers.get_server(server_name)
+				data = server.get_server_data()
+				print(("(Running)" if server.running() else "         ") + " " + server_name + "\t" + f":{data['server_port']}" + "\t" + f"{data['server_type']} {data['server_version']}" + "\t")

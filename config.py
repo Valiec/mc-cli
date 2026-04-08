@@ -13,7 +13,7 @@ class Config:
 	config_path = None
 
 	def init_servers(self, conf_path):
-		self.servers = Servers(conf_path)
+		self.servers = Servers(conf_path, self)
 
 
 	def read_config(self):

@@ -4,7 +4,7 @@ import stat
 from util.install_vanilla import install_vanilla
 
 
-def create_server(port, data_path, server_type, version, java_home, rcon_password):
+def create_server(port, data_path, server_type, version, java_home, rcon_password, rcon_port):
     if server_type == "vanilla":
         version = install_vanilla(data_path, version)
         if java_home is None or java_home == "" and "JAVA_HOME" in os.environ:
@@ -23,6 +23,7 @@ def create_server(port, data_path, server_type, version, java_home, rcon_passwor
             f.write(f"rcon.password={rcon_password}\n")
             f.write(f"server-port={port}\n")
             f.write(f"enable-rcon=true\n")
+            f.write(f"rcon.port={rcon_port}\n")
             f.write(f"query.port={port}\n")
             f.write(f"enable-query=true\n")
     return version
