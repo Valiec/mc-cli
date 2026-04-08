@@ -110,7 +110,6 @@ class Commands:
 		self.config.servers.check_server_exists_or_exit(server_name)
 		server_id=self.config.servers.get_server_id(server_name)
 		server_path = self.config.servers.get_server_info(server_name)["data_path"]
-		#subprocess.run([self.config.SCRIPT_ROOT+"/commands/delete.sh", server_id, server_path])
 		self.config.servers.delete_server(server_name)
 		self.config.servers.write_servers_conf() # write out the change
 
