@@ -12,7 +12,7 @@ DO_SYMLINK="false"
 
 read -r -p "mccli: enter install path (blank for default: $INSTALL_PATH) " custom_path
 
-if [ ! -z "$custom_path" ]; then
+if [ -n "$custom_path" ]; then
   INSTALL_PATH="$custom_path"
 fi
 

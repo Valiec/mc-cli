@@ -21,4 +21,4 @@ if [ ! "$mccli_path" = "" ]; then
 	unlink "$mccli_path"
 fi
 
-echo "mccli: sucessfully uninstalled"
+echo "mccli: successfully uninstalled"

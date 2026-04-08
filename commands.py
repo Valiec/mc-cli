@@ -183,7 +183,6 @@ class Commands:
 			sys.exit(1)
 		server_name = self.args[0]
 		self.config.servers.check_server_exists_or_exit(server_name)
-		server_id=self.config.servers.get_server_id(server_name)
 		server_data=self.config.servers.get_server_info(server_name)
 		running_test = self.config.servers.get_server(server_name).running()
 		running = "Yes" if running_test else "No"
