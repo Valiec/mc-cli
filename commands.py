@@ -1,17 +1,12 @@
 import subprocess
-import sys
 import argparse
 import os
 import base64
 import uuid
 
-from mctools import RCONClient
-
 from util.create_server import create_server
 # other parts of MC-CLI
 from utils import *
-from config import Config
-from servers import Servers
 
 class Commands:
 	config = None
@@ -108,8 +103,6 @@ class Commands:
 			sys.exit(1)
 		server_name = self.args[0]
 		self.config.servers.check_server_exists_or_exit(server_name)
-		server_id=self.config.servers.get_server_id(server_name)
-		server_path = self.config.servers.get_server_info(server_name)["data_path"]
 		self.config.servers.delete_server(server_name)
 		self.config.servers.write_servers_conf() # write out the change
 

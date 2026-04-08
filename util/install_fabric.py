@@ -1,10 +1,4 @@
-import json
 import sys
-from urllib.error import HTTPError
-from urllib.request import urlopen
-import requests
-
-import install_vanilla
 
 fabric_meta_url = "https://meta.fabricmc.net/v2/versions/installer"
 
