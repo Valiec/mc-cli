@@ -15,8 +15,7 @@ def write_config():
 	# rewrite the config file
 	with open(config.MCCLI_DIR+"/config.conf", "w") as config_file:
 		config_file.write("VERSION="+config.MCCLI_VERSION+"\n")
-		config_file.write("USE_DOCKER="+config.MCCLI_DOCKER+"\n")
-		config_file.write("USE_SCREEN="+config.MCCLI_SCREEN+"\n")
+		#config_file.write("USE_SCREEN="+config.MCCLI_SCREEN+"\n")
 		config_file.write("AGREED_EULA="+config.MCCLI_EULA+"\n")
 		config_file.write("CMD_DELIMITER="+config.MCCLI_DELIMITER+"\n")
 
@@ -46,15 +45,10 @@ def parse_config():
 
 
 	if not os.path.exists(config.MCCLI_DIR+"/config.conf"):
-		if subprocess.run("which docker", shell=True).returncode == 0:
-			config.MCCLI_DOCKER = (input("use Docker? [Y/n]: ") == "Y")
-		else:
-			config.MCCLI_DOCKER = False
-
-		if subprocess.run("which screen", shell=True).returncode == 0:
-			config.MCCLI_SCREEN = (input("use Screen? [Y/n]: ") == "Y")
-		else:
-			config.MCCLI_SCREEN = False
+		#if subprocess.run("which screen", shell=True).returncode == 0:
+		#	config.MCCLI_SCREEN = (input("use Screen? [Y/n]: ") == "Y")
+		#else:
+		#	config.MCCLI_SCREEN = False
 
 		config.write_config()
 

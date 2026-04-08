@@ -20,8 +20,7 @@ class Commands:
 		parser = argparse.ArgumentParser(prog="mccli")
 		parser.add_argument("-t", "--type", default="vanilla", help="The type of server to create.")
 		parser.add_argument("-v", "--version", default="latest", help="The Minecraft version of the server to be created.")
-		parser.add_argument("-j", "--java-version", default="latest", help="The Java version for the server to be created. Only used for Docker installations.")
-		parser.add_argument("-J", "--java-home", default=os.getenv("JAVA_HOME"), help="The JAVA_HOME location for the server to be created. Only used for non-Docker installations.")
+		parser.add_argument("-j", "--java-home", default=os.getenv("JAVA_HOME"), help="The JAVA_HOME location for the server to be created.")
 		parser.add_argument("-r", "--rcon-password", help="A custom password for the RCON remote console. If you are not using RCON elsewhere, \
 			do not expose the RCON port to the internet, and skip this option to have MCCLI generate a random RCON password.")
 		parser.add_argument("-d", "--data-path", help="The path to the server's install directory.")
@@ -64,24 +63,14 @@ class Commands:
 			else:
 				rcon_password = base64.b64encode(os.urandom(32)).decode('utf-8')
 
-		if self.config.MCCLI_DOCKER:
-			server_creation_proc = subprocess.run(["bash", self.config.SCRIPT_ROOT+"/commands/create.sh", args_arr.port, data_path, args_arr.type.upper(), args_arr.version.upper(), args_arr.java_version, rcon_password], stdout=subprocess.PIPE, stderr=sys.stderr)
-			server_id = server_creation_proc.stdout.strip(b"\n")
-			success = server_creation_proc.returncode == 0
-		else:
-			success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password)
-			if success:
-				args_arr.version = success
-			server_id = uuid.uuid4().hex
-
-
-
+		success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password)
+		if success:
+			args_arr.version = success
+		server_id = uuid.uuid4().hex
 
 		if not success:
 			log_error("server creation failed")
 			sys.exit(1)
-
-
 
 		self.config.servers.register_server(args_arr.server_name, {
 					"server_id": str(server_id),
@@ -189,8 +178,6 @@ class Commands:
 		running = "Yes" if running_test else "No"
 
 		print(server_name+" info:")
-		if self.config.MCCLI_DOCKER:
-			print("Container ID: "+server_id)
 		print("Running: "+running)
 		print("Port: "+server_data["server_port"])
 		print("Data folder: "+server_data["data_path"])

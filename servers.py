@@ -105,30 +105,27 @@ class Server:
 		return resp
 
 	def start(self):
-		if self.servers.config.MCCLI_DOCKER:
-			subprocess.run(["docker", "start", self.server_data["server_id"]])
-		else:
-			server_info = self.server_data
-			data_dir = server_info["data_path"]
-			java_home = server_info["java_home"]
+		server_info = self.server_data
+		data_dir = server_info["data_path"]
+		java_home = server_info["java_home"]
 
-			if not os.path.exists(data_dir+"/eula.txt"):
-				if self.servers.config.MCCLI_EULA:
-					with open(data_dir+"/eula.txt", "w") as eula_file:
-						eula_file.write("eula=true\n")
-				else:
-					print("You must agree to the Minecraft EULA to start the server.")
-					if input("agree? [Y/n]: ") != "Y":
-						print("Exiting.")
-						sys.exit(1)
-					print("Your EULA agreement will been saved for future servers.")
-					with open(data_dir+"/eula.txt", "w") as eula_file:
-						eula_file.write("eula=true\n")
-					# User has accepted the EULA, save this and don't prompt again
-					self.servers.config.MCCLI_EULA = True
-					self.servers.config.write_config()
+		if not os.path.exists(data_dir+"/eula.txt"):
+			if self.servers.config.MCCLI_EULA:
+				with open(data_dir+"/eula.txt", "w") as eula_file:
+					eula_file.write("eula=true\n")
+			else:
+				print("You must agree to the Minecraft EULA to start the server.")
+				if input("agree? [Y/n]: ") != "Y":
+					print("Exiting.")
+					sys.exit(1)
+				print("Your EULA agreement will been saved for future servers.")
+				with open(data_dir+"/eula.txt", "w") as eula_file:
+					eula_file.write("eula=true\n")
+				# User has accepted the EULA, save this and don't prompt again
+				self.servers.config.MCCLI_EULA = True
+				self.servers.config.write_config()
 
-			subprocess.run(["bash", self.servers.config.SCRIPT_ROOT+"/util/start_server.sh", self.server_name, data_dir, java_home], stdout=sys.stdout, stderr=sys.stderr)
+		subprocess.run(["bash", self.servers.config.SCRIPT_ROOT+"/util/start_server.sh", self.server_name, data_dir, java_home], stdout=sys.stdout, stderr=sys.stderr)
 
 
 	def stop(self):
