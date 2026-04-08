@@ -107,7 +107,7 @@ class Commands:
 			stderr_print("delete: mccli delete <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
-		self.config.servers.check_server_exists(server_name)
+		self.config.servers.check_server_exists_or_exit(server_name)
 		server_id=self.config.servers.get_server_id(server_name)
 		server_path = self.config.servers.get_server_info(server_name)["data_path"]
 		#subprocess.run([self.config.SCRIPT_ROOT+"/commands/delete.sh", server_id, server_path])
@@ -121,33 +121,8 @@ class Commands:
 			sys.exit(1)
 
 		server_name = self.args[0]
-		self.config.servers.check_server_exists(server_name)
-		server_id=self.config.servers.get_server_id(server_name)
-
-		if self.config.MCCLI_DOCKER:
-			subprocess.run(["docker", "start", server_id])
-		else:
-			server_info = self.config.servers.get_server_info(server_name)
-			data_dir = server_info["data_path"]
-			java_home = server_info["java_home"]
-
-			if not os.path.exists(data_dir+"/eula.txt"):
-				if self.config.MCCLI_EULA:
-					with open(data_dir+"/eula.txt", "w") as eula_file:
-						eula_file.write("eula=true\n")
-				else:
-					print("You must agree to the Minecraft EULA to start the server.")
-					if input("agree? [Y/n]: ") != "Y":
-						print("Exiting.")
-						sys.exit(1)
-					print("Your EULA agreement will been saved for future servers.")
-					with open(data_dir+"/eula.txt", "w") as eula_file:
-						eula_file.write("eula=true\n")
-					# User has accepted the EULA, save this and don't prompt again
-					self.config.MCCLI_EULA = True
-					self.config.write_config()
-
-			subprocess.run(["bash", self.config.SCRIPT_ROOT+"/util/start_server.sh", server_name, data_dir, java_home], stdout=sys.stdout, stderr=sys.stderr)
+		self.config.servers.check_server_exists_or_exit(server_name)
+		self.config.servers.get_server(server_name).start()
 
 	def stop(self):
 		if len(self.args) < 1:
@@ -155,18 +130,25 @@ class Commands:
 			stderr_print("usage: mccli stop <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
-		self.config.servers.check_server_exists(server_name)
+		self.config.servers.check_server_exists_or_exit(server_name)
 		print(self.config.servers.get_server(server_name).command("stop"))
 
 	def logs(self):
-		if len(self.args) < 1:
-			log_error("logs: missing server name")
-			stderr_print("usage: mccli logs <server name>")
-			sys.exit(1)
-		server_name = self.args[0]
-		self.config.servers.check_server_exists(server_name)
-		server_id=self.config.servers.get_server_id(server_name)
-		subprocess.run([self.config.SCRIPT_ROOT+"/commands/logs.sh", server_id])
+
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("-l", "--list", action="store_true", help="List the existing log files.")
+		parser.add_argument("-s", "--select", action="store_true", help="List the existing log files and prompt to select a file.")
+		parser.add_argument("-i", "--index", type=int, help="Show the INDEX'th previous log file. e.g. -i 1 shows the latest log, and -i 2 the previous log.")
+		parser.add_argument("-f", "--follow", action="store_true",
+							help="Open the log file with tail -f. Conflicts with -t.")
+		parser.add_argument("-t", "--tail", default=24, type=int,
+							help="Number of lines to show in the log file. Conflicts with -f")
+		parser.add_argument("server_name", help="The name of the server to be accessed.")
+		args_arr = parser.parse_args(self.args)
+
+		server_name = args_arr.server_name
+		self.config.servers.check_server_exists_or_exit(server_name)
+		self.config.servers.get_server(server_name).logs(args_arr.list, args_arr.select, args_arr.index, args_arr.follow, args_arr.tail)
 
 	def cmd(self):
 		parser = argparse.ArgumentParser(prog="mccli")
@@ -175,7 +157,7 @@ class Commands:
 		args_arr = parser.parse_args(self.args)
 
 		server_name = args_arr.server_name
-		self.config.servers.check_server_exists(server_name)
+		self.config.servers.check_server_exists_or_exit(server_name)
 		if args_arr.cmd is not None:
 			cmds = args_arr.cmd.split(self.config.MCCLI_DELIMITER)
 			for cmd in cmds:
@@ -189,26 +171,29 @@ class Commands:
 			stderr_print("usage: mccli status <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
-		self.config.servers.check_server_exists(server_name)
+		self.config.servers.check_server_exists_or_exit(server_name)
 		server = self.config.servers.get_server(server_name)
 		server_data = server.get_server_data()
-		query = server.query()
-		pid = server.get_pid()
-		proc_data = subprocess.run(["bash", self.config.SCRIPT_ROOT+"/util/procstats.sh", str(pid)], text=True, capture_output=True).stdout.strip().split("\t")
-		print(f"Version: {server_data['server_version']}\nPlayers Online: {query['numplayers']}/{query['maxplayers']}\nMOTD: {query['motd']}")
-		print(f"PID: {pid}, Started: {proc_data[8]}\n%CPU: {proc_data[2]}, %MEM: {proc_data[3]}")
-		print(self.config.servers.get_server(server_name).command("list"))
-
+		running = self.config.servers.get_server(server_name).running()
+		if running:
+			query = server.query()
+			pid = server.get_pid()
+			proc_data = subprocess.run(["bash", self.config.SCRIPT_ROOT+"/util/procstats.sh", str(pid)], text=True, capture_output=True).stdout.strip().split("\t")
+			print(f"Version: {server_data['server_version']}\nPlayers Online: {query['numplayers']}/{query['maxplayers']}\nMOTD: {query['motd']}")
+			print(f"PID: {pid}, Started: {proc_data[8]}\n%CPU: {proc_data[2]}, %MEM: {proc_data[3]}")
+			print(self.config.servers.get_server(server_name).command("list"))
+		else:
+			print(f"Server {server_name} not running.")
 	def info(self):
 		if len(self.args) < 1:
 			log_error("info: missing server name")
 			stderr_print("usage: mccli info <server name>")
 			sys.exit(1)
 		server_name = self.args[0]
-		self.config.servers.check_server_exists(server_name)
+		self.config.servers.check_server_exists_or_exit(server_name)
 		server_id=self.config.servers.get_server_id(server_name)
 		server_data=self.config.servers.get_server_info(server_name)
-		running_test = (subprocess.run([self.config.SCRIPT_ROOT+"/util/check_running.sh", server_id, server_data["data_path"], bool_str(self.config.MCCLI_DOCKER)]).exitcode == 0)
+		running_test = self.config.servers.get_server(server_name).running()
 		running = "Yes" if running_test else "No"
 
 		print(server_name+" info:")

@@ -1,6 +1,7 @@
+import glob
 import os
 import shutil
-import sys
+import subprocess
 import time
 
 from mctools import RCONClient
@@ -11,10 +12,12 @@ from utils import *
 class Server:
 	server_name = None
 	server_data = None
+	servers = None
 
-	def __init__(self, server_name, server_data):
+	def __init__(self, server_name, server_data, servers):
 		self.server_name = server_name
 		self.server_data = server_data
+		self.servers = servers
 
 	def get_server_id(self):
 		return self.server_data["server_id"]
@@ -25,21 +28,58 @@ class Server:
 	def delete(self):
 		if os.path.exists(os.path.join(self.server_data["data_path"])):
 			if os.path.exists(os.path.join(self.server_data["data_path"], ".running")):
-				with open(os.path.join(self.server_data["data_path"], ".running")) as f:
 					self.command("stop")
 			while os.path.exists(os.path.join(self.server_data["data_path"], ".running")):
 				time.sleep(1)
 			shutil.rmtree(os.path.join(self.server_data["data_path"]))
 
 
-	def is_running(self):
-		pass
+	def running(self):
+		if os.path.exists(self.server_data["data_path"]):
+			return os.path.exists(os.path.join(self.server_data["data_path"], ".running"))
+		else:
+			return False
 
 	def query(self):
 		query = QUERYClient('127.0.0.1', port=self.server_data["server_port"])
 		stats = query.get_basic_stats()
 		query.stop()
 		return stats
+
+	def logs(self, list_logs=False, select_log=False, log_index=None, follow=False, tail_lines=24):
+		logs = glob.glob(os.path.join(self.server_data["data_path"], "mccli_*.log"))
+		logs.sort()
+		selected_log = logs[-1]
+
+		if log_index is not None:
+			# 1 is -1, i.e. the latest, 2 is -2 the next to last, etc.
+			if log_index > len(logs):
+				sys.stderr.write(f"mccli: error: Log index {log_index} out of range.\n")
+				return False
+			selected_log = logs[-1*int(log_index)]
+
+		if list_logs or select_log:
+			i = 1
+			for log in logs:
+				if select_log:
+					print(f"{i}) {os.path.basename(log)}")
+				else:
+					print(os.path.basename(log))
+				i += 1
+			if not select_log:
+				return True
+
+		if select_log:
+			log_index = input("Select log: ")
+			selected_log = logs[int(log_index)-1]
+
+		if follow:
+			subprocess.run(["tail", "-f", selected_log])
+		else:
+			subprocess.run(["tail", "-n", str(tail_lines), selected_log])
+
+		return True
+
 
 	def get_pid(self):
 		if os.path.exists(os.path.join(self.server_data["data_path"],".running")):
@@ -65,7 +105,31 @@ class Server:
 		return resp
 
 	def start(self):
-		pass
+		if self.servers.config.MCCLI_DOCKER:
+			subprocess.run(["docker", "start", self.server_data["server_id"]])
+		else:
+			server_info = self.server_data
+			data_dir = server_info["data_path"]
+			java_home = server_info["java_home"]
+
+			if not os.path.exists(data_dir+"/eula.txt"):
+				if self.servers.config.MCCLI_EULA:
+					with open(data_dir+"/eula.txt", "w") as eula_file:
+						eula_file.write("eula=true\n")
+				else:
+					print("You must agree to the Minecraft EULA to start the server.")
+					if input("agree? [Y/n]: ") != "Y":
+						print("Exiting.")
+						sys.exit(1)
+					print("Your EULA agreement will been saved for future servers.")
+					with open(data_dir+"/eula.txt", "w") as eula_file:
+						eula_file.write("eula=true\n")
+					# User has accepted the EULA, save this and don't prompt again
+					self.servers.config.MCCLI_EULA = True
+					self.servers.config.write_config()
+
+			subprocess.run(["bash", self.servers.config.SCRIPT_ROOT+"/util/start_server.sh", self.server_name, data_dir, java_home], stdout=sys.stdout, stderr=sys.stderr)
+
 
 	def stop(self):
 		self.command("stop")
@@ -94,7 +158,7 @@ class Servers:
 	def server_exists(self, server_name):
 		return server_name in self.servers
 
-	def check_server_exists(self, server_name):
+	def check_server_exists_or_exit(self, server_name):
 		if not self.server_exists(server_name):
 			log_error("server "+server_name+" does not exist")
 			sys.exit(1)
@@ -116,7 +180,7 @@ class Servers:
 		return self.servers[server_name].get_server_data()
 
 	def register_server(self, server_name, server_data):
-		self.servers[server_name] = Server(server_name, server_data)
+		self.servers[server_name] = Server(server_name, server_data, self)
 		self.used_ports.append(server_data["server_port"])
 		self.used_ports.append(server_data["rcon_port"])
 

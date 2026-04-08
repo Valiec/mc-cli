@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+data_dir="$2"
+
 if [ "$MCCLI_DOCKER" = "true" ]; then
 	docker ps --no-trunc | grep "$1" >/dev/null	
 else
-	[ ! -e "$data_dir/.running" ]
+	[ -e "$data_dir/.running" ]
 fi
 server_running="$?"
 
@@ -12,4 +14,5 @@ if [ "$server_running" -gt 0 ]; then
 	exit 1;
 fi
 
-docker exec "$1" tail -n 24 -F /data/logs/latest.log
+echo "logs go here"
+ls "$data_dir"/mccli_*.log
