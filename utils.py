@@ -1,7 +1,7 @@
 import sys
 
-def bool_str(bool):
-	return "true" if bool else "false"
+def bool_str(bool_value):
+	return "true" if bool_value else "false"
 
 def stderr_print(msg):
 	sys.stderr.write(msg+"\n")
