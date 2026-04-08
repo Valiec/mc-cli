@@ -114,6 +114,17 @@ class Commands:
 		self.config.servers.check_server_exists_or_exit(server_name)
 		print(self.config.servers.get_server(server_name).command("stop"))
 
+	def path(self):
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("server_name", nargs='?', help="The name of the server to be accessed. If not specified, the main MCCLI path will be provided.")
+		args_arr = parser.parse_args(self.args)
+
+		if args_arr.server_name is None:
+			print(self.config.MCCLI_DIR)
+		else:
+			self.config.servers.check_server_exists_or_exit(args_arr.server_name)
+			print(self.config.servers.get_server(args_arr.server_name).path())
+
 	def logs(self):
 
 		parser = argparse.ArgumentParser(prog="mccli")

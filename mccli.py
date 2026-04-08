@@ -86,6 +86,8 @@ elif action == "stop":
 	commands.stop()
 elif action == "logs":
 	commands.logs()
+elif action == "path":
+	commands.path()
 elif action == "cmd":
 	commands.cmd()
 elif action == "status":

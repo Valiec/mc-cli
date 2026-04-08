@@ -88,6 +88,9 @@ class Server:
 		else:
 			return None
 
+	def path(self):
+		return self.server_data["data_path"]
+
 	def command(self, command=None):
 		rcon = RCONClient("127.0.0.1", port=int(self.server_data["rcon_port"]))
 		rcon.login(self.server_data["rcon_password"])
