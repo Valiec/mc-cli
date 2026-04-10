@@ -1,7 +1,9 @@
+import signal
 import subprocess
 import argparse
 import os
 import base64
+import time
 import uuid
 
 from util.create_server import create_server
@@ -45,7 +47,7 @@ class Commands:
 		data_path = args_arr.data_path
 
 		if data_path is None:
-			data_path = os.getenv("MCCLI_DIR")+"/servers/"+args_arr.server_name
+			data_path = os.path.join(os.getenv("MCCLI_DIR"), "servers", args_arr.server_name)
 
 		if os.path.exists(data_path) and not os.path.isdir(data_path):
 			log_error("data path "+data_path+" already exists and is not a directory")
@@ -54,8 +56,8 @@ class Commands:
 		os.makedirs(data_path, exist_ok=True)
 
 		if args_arr.rcon_password is None:
-			if os.path.exists(data_path+"/server.properties"):
-				with open(data_path+"/server.properties") as server_properties:
+			if os.path.exists(os.path.join(data_path, "server.properties")):
+				with open(os.path.join(data_path, "server.properties")) as server_properties:
 					for line_s in server_properties:
 						line = line_s.split("=", 1)
 						if line[0] == "rcon.password":
@@ -85,33 +87,81 @@ class Commands:
 		self.config.servers.write_servers_conf()
 
 	def delete(self):
-		if len(self.args) < 1:
-			log_error("delete: missing server name")
-			stderr_print("delete: mccli delete <server name>")
-			sys.exit(1)
-		server_name = self.args[0]
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("server_name", help="The name of the server to be deleted.")
+		args_arr = parser.parse_args(self.args)
+		server_name = args_arr.server_name
+
 		self.config.servers.check_server_exists_or_exit(server_name)
 		self.config.servers.delete_server(server_name)
 		self.config.servers.write_servers_conf() # write out the change
 
 	def start(self):
-		if len(self.args) < 1:
-			log_error("start: missing server name")
-			stderr_print("usage: mccli start <server name>")
-			sys.exit(1)
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("--eula-agree", action="store_true", help="Agrees to the Mojang EULA.")
+		parser.add_argument("server_name", help="The name of the server to start.")
+		args_arr = parser.parse_args(self.args)
+
+		if args_arr.eula_agree:
+			self.config.MCCLI_DIR = True
 
 		server_name = self.args[0]
 		self.config.servers.check_server_exists_or_exit(server_name)
+		server = self.config.servers.get_server(server_name)
+		if server.running():
+			log_error(f"server {server_name} is already running")
+			sys.exit(1)
 		self.config.servers.get_server(server_name).start()
 
 	def stop(self):
-		if len(self.args) < 1:
-			log_error("stop: missing server name")
-			stderr_print("usage: mccli stop <server name>")
-			sys.exit(1)
-		server_name = self.args[0]
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("server_name", help="The name of the server to stop.")
+		args_arr = parser.parse_args(self.args)
+		server_name = args_arr.server_name
+
 		self.config.servers.check_server_exists_or_exit(server_name)
+		server = self.config.servers.get_server(server_name)
+		if not server.running():
+			log_error(f"server {server_name} not running")
+			sys.exit(1)
 		print(self.config.servers.get_server(server_name).command("stop"))
+
+	def kill(self):
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("-f", "--force", action="store_true", help="Try SIGKILL (kill -9) if SIGTERM fails.")
+		parser.add_argument("server_name", help="The name of the server to kill.")
+		args_arr = parser.parse_args(self.args)
+
+		server_name = args_arr.server_name
+		self.config.servers.check_server_exists_or_exit(server_name)
+		server = self.config.servers.get_server(server_name)
+		server_pid = None
+		if not server.running():
+			log_error(f"server {server_name} not running or .running file not present, PID not known")
+			sys.exit(1)
+		with open(os.path.join(server.path(), ".running"), "r") as pidfile:
+			server_pid = int(pidfile.read().strip())
+
+		if not pid_exists(server_pid):
+			log_error(f"server {server_name} process does not exist with .running PID {server_pid}")
+			sys.exit(1)
+
+		os.kill(server_pid, signal.SIGTERM)
+		time.sleep(3)
+		if pid_exists(server_pid):
+			if args_arr.force:
+				log_error("server did not terminate with SIGTERM, trying SIGKILL (kill -9)", "info")
+				os.kill(server_pid, signal.SIGKILL)
+				time.sleep(3)
+				if pid_exists(server_pid):
+					# "critical" because this SHOULD NOT HAPPEN
+					log_error("server did not terminate with SIGKILL (kill -9)", "critical")
+					sys.exit(1)
+			else:
+				log_error(f"server did not terminate with SIGTERM")
+				sys.exit(1)
+
+		os.remove(os.path.join(server.path(), ".running"))
 
 	def path(self):
 		parser = argparse.ArgumentParser(prog="mccli")
@@ -149,19 +199,23 @@ class Commands:
 
 		server_name = args_arr.server_name
 		self.config.servers.check_server_exists_or_exit(server_name)
+		server = self.config.servers.get_server(server_name)
+		if not server.running():
+			log_error(f"server {server_name} not running")
+			sys.exit(1)
 		if args_arr.cmd is not None:
 			cmds = args_arr.cmd.split(self.config.MCCLI_DELIMITER)
 			for cmd in cmds:
-				print(self.config.servers.get_server(server_name).command(cmd.strip()))
+				print(server.command(cmd.strip()))
 		else:
-			self.config.servers.get_server(server_name).command()
+			server.command()
 
 	def status(self):
-		if len(self.args) < 1:
-			log_error("status: missing server name")
-			stderr_print("usage: mccli status <server name>")
-			sys.exit(1)
-		server_name = self.args[0]
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("server_name", help="The name of the server for which to show status info.")
+		args_arr = parser.parse_args(self.args)
+		server_name = args_arr.server_name
+
 		self.config.servers.check_server_exists_or_exit(server_name)
 		server = self.config.servers.get_server(server_name)
 		server_data = server.get_server_data()
@@ -169,7 +223,7 @@ class Commands:
 		if running:
 			query = server.query()
 			pid = server.get_pid()
-			proc_data = subprocess.run(["bash", self.config.SCRIPT_ROOT+"/util/procstats.sh", str(pid)], text=True, capture_output=True).stdout.strip().split("\t")
+			proc_data = subprocess.run(["bash", str(os.path.join(self.config.SCRIPT_ROOT, "util", "procstats.sh")), str(pid)], text=True, capture_output=True).stdout.strip().split("\t")
 			print(f"Version: {server_data['server_version']}\nPlayers Online: {query['numplayers']}/{query['maxplayers']}\nMOTD: {query['motd']}")
 			print(f"PID: {pid}, Started: {proc_data[8]}\n%CPU: {proc_data[2]}, %MEM: {proc_data[3]}")
 			print(self.config.servers.get_server(server_name).command("list"))
@@ -177,11 +231,11 @@ class Commands:
 			print(f"Server {server_name} not running.")
 
 	def info(self):
-		if len(self.args) < 1:
-			log_error("info: missing server name")
-			stderr_print("usage: mccli info <server name>")
-			sys.exit(1)
-		server_name = self.args[0]
+		parser = argparse.ArgumentParser(prog="mccli")
+		parser.add_argument("server_name", help="The name of the server for which to show info.")
+		args_arr = parser.parse_args(self.args)
+		server_name = args_arr.server_name
+
 		self.config.servers.check_server_exists_or_exit(server_name)
 		server_data=self.config.servers.get_server_info(server_name)
 		running_test = self.config.servers.get_server(server_name).running()
@@ -197,10 +251,50 @@ class Commands:
 		print("Java home: "+server_data["java_home"])
 
 	def help(self):
-		subprocess.run([self.config.SCRIPT_ROOT+"/commands/help.sh"]+self.args)
+		print("""
+MC-CLI help:
+
+usage: mccli <subcommand> [args...]
+
+Subcommands:
+
+    list:	Lists all Minecraft servers installed using MC-CLI.
+
+    create:	Creates a new Minecraft server with the given name and configuration.
+
+    delete:	Deletes a Minecraft server.
+
+    start:	Starts a Minecraft server.
+
+    stop:	Stops a Minecraft server.
+
+    logs:	Shows the logs for a Minecraft server.
+
+    path:	Show the path to a server's data directory, or the base .mccli path.
+
+    cmd:	Sends the given command to the server, or opens an interactive RCON console.
+
+    kill:	Force-kills a nonresponsive Minecraft server.
+
+    status:	Displays live status info for a Minecraft server.
+
+    info:	Displays installation info for a Minecraft server.
+
+    version:	Displays the version number of MC-CLI.
+
+    agree-eula:	Saves agreement to the Mojang EULA, for use in non-interactive environments.
+
+    help:	Displays this help message.
+
+Use 'mccli <subcommand> -h' for more detailed help on a given command.
+		""")
 
 	def version(self):
 		print(self.config.MCCLI_VERSION)
+
+	def agree_eula(self):
+		self.config.MCCLI_EULA = True
+		self.config.write_config()
 
 	def list(self):
 

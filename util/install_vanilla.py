@@ -5,6 +5,8 @@ from urllib.error import HTTPError
 
 import requests
 
+from utils import log_error, stderr_print
+
 
 def install_vanilla(download_dir, version_id, cache):
 
@@ -17,7 +19,7 @@ def install_vanilla(download_dir, version_id, cache):
 			latest = manifest["latest"]["release"]
 			latest_snapshot = manifest["latest"]["snapshot"]
 	except HTTPError:
-		sys.stderr.write("mccli: error: failed to download version manifest data\n")
+		log_error("failed to download version manifest data")
 		sys.exit(1)
 
 	versions = {}
@@ -33,7 +35,7 @@ def install_vanilla(download_dir, version_id, cache):
 	if version_id in versions:
 		version_url = versions[version_id]["url"]
 	else:
-		sys.stderr.write("mccli: error: no such version \'"+version_id+"\'\n")
+		log_error("no such version \'"+version_id+"\'")
 		sys.exit(1)
 
 	try:
@@ -42,13 +44,13 @@ def install_vanilla(download_dir, version_id, cache):
 			version_json = version_resp.json()
 			server_download = version_json["downloads"]["server"]
 	except HTTPError:
-		sys.stderr.write("mccli: error: failed to download version data for \'" + version_id + "\'\n")
+		log_error("failed to download version data for \'" + version_id + "\'")
 		sys.exit(1)
 
 	fetch_result = cache.get("vanilla", version_id, server_download["sha1"], server_download["url"], "server.jar")
 	if fetch_result[0] != "success":
 		if fetch_result[1] == "hash_mismatch":
-			sys.stderr.write("Exiting.\n")
+			stderr_print("Exiting.")
 		sys.exit(1)
 	else:
 		shutil.copy(fetch_result[2], os.path.join(download_dir, "server.jar"))

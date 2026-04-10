@@ -3,6 +3,8 @@ import sys
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
+from utils import log_error
+
 version_id = sys.argv[1]
 
 manifest=json.loads(sys.stdin.read())
@@ -19,14 +21,13 @@ for entry in manifest["versions"]:
 if version_id in versions:
 	version_url = versions[version_id]["url"]
 else:
-	sys.stderr.write("mccli: error: no such version \'"+version_id+"\'\n")
+	log_error("no such version \'"+version_id+"\'")
 	sys.exit(1)
 
 try:
 	with urlopen(version_url) as version_response:
 		server_download = json.loads(version_response.read())["downloads"]["server"]
-		print(server_download["sha1"]+"\t"+server_download["url"])
 except HTTPError:
-	sys.stderr.write("mccli: error: failed to download version data for \'"+version_id+"\'\n")
+	log_error("failed to download version data for \'"+version_id+"\'")
 	sys.exit(1)
 

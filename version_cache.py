@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import json
 import os
@@ -5,6 +6,8 @@ import sys
 from urllib.error import HTTPError
 
 import requests
+
+from utils import log_error
 
 
 class VersionCache:
@@ -36,8 +39,8 @@ class VersionCache:
 
         cache_miss = True
 
-        if category in self.cache_data and version in self.cache_data[category]:
-            if file_hash is not None and file_hash == self.cache_data[category][version]['hash']:
+        if category in self.cache_data and version in self.cache_data[category] and filename in self.cache_data[category][version]:
+            if file_hash is not None and file_hash == self.cache_data[category][version][filename]['hash']:
                 cache_miss = False
             elif file_hash is None:
                 cache_miss = False
@@ -61,20 +64,23 @@ class VersionCache:
                     with open(path, "rb") as f:
                         sha1 = hashlib.file_digest(f, "sha1").hexdigest()
                         if file_hash is not None and sha1 != file_hash:
-                            sys.stderr.write(
-                                f"mccli: warning: sha1 hash of downloaded file {sha1} does not match provided sum {file_hash}\n")
+                            log_error(
+                                f"warning: sha1 hash of downloaded file {sha1} does not match provided sum {file_hash}")
                             ignore = input("continue? [Y/n] ")
                             if ignore != "Y":
                                 os.remove(path)
                                 return ["failed", "hash_mismatch", None]
 
-                        self.cache_data[category][version] = {"hash": sha1}
-                        self.write_cache_data()
+                        self.cache_data[category][version] = {filename: {"hash": sha1,
+                                                                         "added": datetime.datetime.now().isoformat()}}
                 except HTTPError:
-                    sys.stderr.write(f"mccli: error: failed to download for '{category} {version}'\n")
+                    log_error(f"failed to download for '{category} {version}'")
                     return ["failed", "download_error", None]
             else:
                 return ["failed", "not_found", None]
+
+        self.cache_data[category][version][filename]["last_used"] = datetime.datetime.now().isoformat()
+        self.write_cache_data()
 
         return ["success", "fetched" if cache_miss else "cached", os.path.join(self.get_cache_path(category, version), filename)]
 

@@ -54,7 +54,7 @@ class Server:
 		if log_index is not None:
 			# 1 is -1, i.e. the latest, 2 is -2 the next to last, etc.
 			if log_index > len(logs):
-				sys.stderr.write(f"mccli: error: Log index {log_index} out of range.\n")
+				log_error(f"Log index {log_index} out of range.")
 				return False
 			selected_log = logs[-1*int(log_index)]
 
@@ -93,12 +93,17 @@ class Server:
 
 	def command(self, command=None):
 		rcon = RCONClient("127.0.0.1", port=int(self.server_data["rcon_port"]))
-		rcon.login(self.server_data["rcon_password"])
+		try:
+			rcon.login(self.server_data["rcon_password"])
+		except ConnectionRefusedError:
+			log_error(f"server {self.server_name} rcon connection failed, server may be still starting")
+			exit(1)
 		resp = None
 		if command is None:
+			prompt = f"{self.server_name} > "
 			try:
 				while True:
-					cmd = input("rcon> ")
+					cmd = input(prompt)
 					print(rcon.command(cmd))
 			except KeyboardInterrupt:
 				sys.exit(0)
@@ -112,9 +117,9 @@ class Server:
 		data_dir = server_info["data_path"]
 		java_home = server_info["java_home"]
 
-		if not os.path.exists(data_dir+"/eula.txt"):
+		if not os.path.exists(os.path.join(data_dir, "eula.txt")):
 			if self.servers.config.MCCLI_EULA:
-				with open(data_dir+"/eula.txt", "w") as eula_file:
+				with open(os.path.join(data_dir, "eula.txt"), "w") as eula_file:
 					eula_file.write("eula=true\n")
 			else:
 				print("You must agree to the Minecraft EULA to start the server.")
@@ -122,14 +127,14 @@ class Server:
 					print("Exiting.")
 					sys.exit(1)
 				print("Your EULA agreement will been saved for future servers.")
-				with open(data_dir+"/eula.txt", "w") as eula_file:
+				with open(os.path.join(data_dir, "eula.txt"), "w") as eula_file:
 					eula_file.write("eula=true\n")
 				# User has accepted the EULA, save this and don't prompt again
 				self.servers.config.MCCLI_EULA = True
 				self.servers.config.write_config()
 
-		subprocess.run(["bash", self.servers.config.SCRIPT_ROOT+"/util/start_server.sh", self.server_name, data_dir, java_home], stdout=sys.stdout, stderr=sys.stderr)
-
+		subprocess.Popen(["bash", os.path.join(self.server_data["data_path"],"start.sh")])
+		print(f"Server {self.server_name} starting.")
 
 	def stop(self):
 		self.command("stop")

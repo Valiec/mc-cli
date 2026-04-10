@@ -19,7 +19,7 @@ class Config:
 
 
 	def read_config(self):
-		with open(self.MCCLI_DIR+"/config.conf") as config_file:
+		with open(os.path.join(self.MCCLI_DIR, "config.conf")) as config_file:
 			for line in config_file:
 				key = line.split("=")[0]
 				value = "=".join(line.split("=")[1:])
@@ -33,7 +33,7 @@ class Config:
 					self.CACHE_DIR = value.strip()
 
 	def write_config(self):
-		with open(self.MCCLI_DIR+"/config.conf", "w") as config_file:
+		with open(os.path.join(self.MCCLI_DIR, "config.conf"), "w") as config_file:
 			config_file.write("VERSION="+self.MCCLI_VERSION+"\n")
 			#config_file.write("USE_SCREEN="+bool_str(self.MCCLI_SCREEN)+"\n")
 			config_file.write("AGREED_EULA="+bool_str(self.MCCLI_EULA)+"\n")
