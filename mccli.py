@@ -5,19 +5,12 @@ import subprocess
 from commands import Commands
 from utils import *
 from config import Config
+from version_cache import VersionCache
 
 config = Config()
 
 os.environ["MCCLI_VERSION"] = config.MCCLI_VERSION
 config.SCRIPT_ROOT = os.environ["SCRIPT_ROOT"]
-
-def write_config():
-	# rewrite the config file
-	with open(config.MCCLI_DIR+"/config.conf", "w") as config_file:
-		config_file.write("VERSION="+config.MCCLI_VERSION+"\n")
-		#config_file.write("USE_SCREEN="+config.MCCLI_SCREEN+"\n")
-		config_file.write("AGREED_EULA="+config.MCCLI_EULA+"\n")
-		config_file.write("CMD_DELIMITER="+config.MCCLI_DELIMITER+"\n")
 
 def parse_config():
 	if not "MCCLI_DIR" in os.environ:
@@ -57,6 +50,10 @@ def parse_config():
 
 	config.init_servers(config.MCCLI_DIR+"/servers.conf")
 	config.servers.read_servers_conf()
+
+	cache = VersionCache(config)
+
+	config.cache = cache
 
 
 def usage():

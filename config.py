@@ -11,6 +11,8 @@ class Config:
 	SCRIPT_ROOT=None
 	servers = None
 	config_path = None
+	CACHE_DIR = None
+	cache = None
 
 	def init_servers(self, conf_path):
 		self.servers = Servers(conf_path, self)
@@ -24,9 +26,11 @@ class Config:
 				#if key == "USE_SCREEN":
 				#	self.MCCLI_SCREEN = (value == "true")
 				if key == "AGREED_EULA":
-					self.MCCLI_EULA = (value == "true")
+					self.MCCLI_EULA = (value.strip() == "true")
 				elif key == "CMD_DELIMITER":
 					self.MCCLI_DELIMITER = value.strip()
+				elif key == "CACHE_DIR":
+					self.CACHE_DIR = value.strip()
 
 	def write_config(self):
 		with open(self.MCCLI_DIR+"/config.conf", "w") as config_file:
@@ -34,4 +38,5 @@ class Config:
 			#config_file.write("USE_SCREEN="+bool_str(self.MCCLI_SCREEN)+"\n")
 			config_file.write("AGREED_EULA="+bool_str(self.MCCLI_EULA)+"\n")
 			config_file.write("CMD_DELIMITER="+self.MCCLI_DELIMITER+"\n")
+			config_file.write("CACHE_DIR="+self.CACHE_DIR+"\n")
 

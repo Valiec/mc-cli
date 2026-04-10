@@ -4,9 +4,9 @@ import stat
 from util.install_vanilla import install_vanilla
 
 
-def create_server(port, data_path, server_type, version, java_home, rcon_password, rcon_port):
+def create_server(port, data_path, server_type, version, java_home, rcon_password, rcon_port, cache):
     if server_type == "vanilla":
-        version = install_vanilla(data_path, version)
+        version = install_vanilla(data_path, version, cache)
         if java_home is None or java_home == "" and "JAVA_HOME" in os.environ:
             java_home = os.environ["JAVA_HOME"]
         if java_home is None:

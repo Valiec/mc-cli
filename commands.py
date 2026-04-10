@@ -63,7 +63,7 @@ class Commands:
 			else:
 				rcon_password = base64.b64encode(os.urandom(32)).decode('utf-8')
 
-		success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password, args_arr.rcon_port)
+		success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password, args_arr.rcon_port, self.config.cache)
 		if success:
 			args_arr.version = success
 		server_id = uuid.uuid4().hex
