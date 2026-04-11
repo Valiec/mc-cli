@@ -16,7 +16,7 @@ def create_server(port, data_path, server_type, version, java_home, rcon_passwor
             if java_home == "":
                 java_str = ""
             f.write('cd "$(dirname "$0")" || exit 1\n')
-            f.write(f'{java_str}java -jar server.jar -nogui > "mccli_$(date +%F_%T).log" 2>&1 &\n')
+            f.write(f'{java_str}java -jar server.jar nogui > "mccli_$(date +%F_%T).log" 2>&1 &\n')
             f.write('pid="$!"\n')
             f.write('echo "$pid" > .running &&\n')
             f.write('wait "$pid" &&\n')
