@@ -143,8 +143,9 @@ class Commands:
 			server_pid = int(pidfile.read().strip())
 
 		if not pid_exists(server_pid):
-			log_error(f"server {server_name} process does not exist with .running PID {server_pid}")
-			sys.exit(1)
+			log_error(f"server {server_name} process does not exist with .running PID {server_pid}, removing .running file")
+			os.remove(os.path.join(server.path(), ".running"))
+			sys.exit(0)
 
 		os.kill(server_pid, signal.SIGTERM)
 		time.sleep(3)
