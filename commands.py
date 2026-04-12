@@ -70,10 +70,10 @@ class Commands:
 		if success[0] == "success":
 			args_arr.version = success[1]
 			args_arr.server_version = success[2] if success[2] else ""
-		server_id = uuid.uuid4().hex
-
-		if not success:
+			server_id = uuid.uuid4().hex
+		else:
 			log_error("server creation failed")
+			os.rmdir(data_path)
 			sys.exit(1)
 
 		self.config.servers.register_server(args_arr.server_name, {
