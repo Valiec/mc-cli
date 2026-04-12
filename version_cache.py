@@ -2,12 +2,10 @@ import datetime
 import hashlib
 import json
 import os
-import sys
 from urllib.error import HTTPError
 
 import requests
 
-from config import Config
 from utils import log_error
 
 

@@ -1,6 +1,5 @@
 import os.path
 import shutil
-import sys
 from urllib.error import HTTPError
 
 import requests

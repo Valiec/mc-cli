@@ -6,8 +6,6 @@ from utils import log_error
 
 
 def create_server(port, data_path, server_type, version, java_home, rcon_password, rcon_port, cache, mod_version):
-    start_cmd = None
-
     if server_type == "paper":
         success, version, mod_version, flags = install_paper(data_path, version, mod_version, cache)
         start_cmd = f"java {' '.join(flags)} -jar server.jar nogui"

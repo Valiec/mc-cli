@@ -1,7 +1,6 @@
 import signal
 import subprocess
 import argparse
-import os
 import base64
 import time
 import uuid
@@ -254,7 +253,8 @@ class Commands:
 		print("Minecraft version: "+server_data["server_version"])
 		print("Java home: "+server_data["java_home"])
 
-	def help(self):
+	@staticmethod
+	def help():
 		print("""
 MC-CLI help:
 

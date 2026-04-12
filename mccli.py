@@ -1,6 +1,3 @@
-import os
-import subprocess
-
 # other parts of MC-CLI
 from commands import Commands
 from utils import *

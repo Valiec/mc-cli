@@ -1,5 +1,4 @@
 import glob
-import os
 import shutil
 import subprocess
 import time
@@ -107,6 +106,7 @@ class Server:
 					if cmd != "":
 						print(rcon.command(cmd))
 			except KeyboardInterrupt:
+				print("")  # print a newline
 				sys.exit(0)
 		else:
 			resp = rcon.command(command)
@@ -116,7 +116,6 @@ class Server:
 	def start(self):
 		server_info = self.server_data
 		data_dir = server_info["data_path"]
-		java_home = server_info["java_home"]
 
 		if not os.path.exists(os.path.join(data_dir, "eula.txt")):
 			if self.servers.config.MCCLI_EULA:
