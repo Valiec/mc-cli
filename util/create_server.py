@@ -16,8 +16,8 @@ def create_server(port, data_path, server_type, version, java_home, rcon_passwor
         if mod_version is not None:
             log_error("-V/--server-version has no effect for vanilla servers, use -v/--version", "error")
             exit(1)
-        success, version, mod_version, _ = install_vanilla(data_path, version, cache)
-        start_cmd = "java -jar server.jar nogui"
+        success, version, mod_version, flags = install_vanilla(data_path, version, cache)
+        start_cmd = f"java {' '.join(flags)} -jar server.jar nogui"
 
 
     if java_home is None or java_home == "" and "JAVA_HOME" in os.environ:
