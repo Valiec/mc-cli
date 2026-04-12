@@ -147,3 +147,6 @@ def install_paper(download_dir, mc_version_id, paper_version_id, cache):
 		shutil.copy(fetch_result[2], os.path.join(download_dir, "server.jar"))
 
 	return ["success", mc_version_id, paper_version_id, recommended_flags]
+
+
+# fabric_meta_url = "https://meta.fabricmc.net/v2/versions/installer"
