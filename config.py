@@ -14,6 +14,10 @@ class Config:
 	CACHE_DIR = None
 	cache = None
 
+	default_headers = {
+		'User-Agent': f'mccli/{MCCLI_VERSION} (https://github.com/Valiec/mc-cli)',
+	}
+
 	def init_servers(self, conf_path):
 		self.servers = Servers(conf_path, self)
 

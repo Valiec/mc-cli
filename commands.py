@@ -22,6 +22,7 @@ class Commands:
 		parser = argparse.ArgumentParser(prog="mccli")
 		parser.add_argument("-t", "--type", default="vanilla", help="The type of server to create.")
 		parser.add_argument("-v", "--version", default="latest", help="The Minecraft version of the server to be created.")
+		parser.add_argument("-V", "--server-version", help="The version of any custom server software to be installed. Optional and ignored for vanilla.")
 		parser.add_argument("-j", "--java-home", default=os.getenv("JAVA_HOME"), help="The JAVA_HOME location for the server to be created.")
 		parser.add_argument("-r", "--rcon-password", help="A custom password for the RCON remote console. If you are not using RCON elsewhere, \
 			do not expose the RCON port to the internet, and skip this option to have MCCLI generate a random RCON password.")
@@ -65,9 +66,10 @@ class Commands:
 			else:
 				rcon_password = base64.b64encode(os.urandom(32)).decode('utf-8')
 
-		success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password, args_arr.rcon_port, self.config.cache)
-		if success:
-			args_arr.version = success
+		success = create_server(args_arr.port, data_path, args_arr.type, args_arr.version, args_arr.java_home, rcon_password, args_arr.rcon_port, self.config.cache, args_arr.server_version)
+		if success[0] == "success":
+			args_arr.version = success[1]
+			args_arr.server_version = success[2] if success[2] else ""
 		server_id = uuid.uuid4().hex
 
 		if not success:
@@ -79,6 +81,7 @@ class Commands:
 					"server_port": str(args_arr.port),
 					"server_type": str(args_arr.type),
 					"server_version": str(args_arr.version),
+					"server_mod_version": str(args_arr.server_version),
 					"rcon_password": str(rcon_password),
 					"data_path": str(data_path),
 					"java_home": str(args_arr.java_home),

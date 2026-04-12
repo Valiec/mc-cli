@@ -7,6 +7,7 @@ from urllib.error import HTTPError
 
 import requests
 
+from config import Config
 from utils import log_error
 
 
@@ -35,7 +36,7 @@ class VersionCache:
         with open(os.path.join(self.config.CACHE_DIR, 'cache_data.json'), 'w') as f:
             json.dump({"cache_version": 1, "cache_data": self.cache_data}, f)
 
-    def get(self, category, version, file_hash=None, download_url=None, filename="server.jar"):
+    def get(self, category, version, file_hash=None, download_url=None, filename="server.jar", hash_alg="sha1"):
 
         cache_miss = True
 
@@ -52,7 +53,7 @@ class VersionCache:
                     if not os.path.exists(cache_path):
                         os.makedirs(cache_path)
                     path = os.path.join(cache_path, filename)
-                    with requests.get(download_url, stream=True) as jar_stream:
+                    with requests.get(download_url, stream=True, headers=self.config.default_headers) as jar_stream:
                         jar_stream.raise_for_status()
                         with open(path, 'wb') as f:
                             for chunk in jar_stream.iter_content(chunk_size=8192):
@@ -62,16 +63,16 @@ class VersionCache:
                         self.cache_data[category] = {}
 
                     with open(path, "rb") as f:
-                        sha1 = hashlib.file_digest(f, "sha1").hexdigest()
-                        if file_hash is not None and sha1 != file_hash:
+                        downloaded_digest = hashlib.file_digest(f, hash_alg).hexdigest()
+                        if file_hash is not None and downloaded_digest != file_hash:
                             log_error(
-                                f"warning: sha1 hash of downloaded file {sha1} does not match provided sum {file_hash}")
+                                f"warning: {hash_alg} hash of downloaded file {downloaded_digest} does not match provided sum {file_hash}")
                             ignore = input("continue? [Y/n] ")
                             if ignore != "Y":
                                 os.remove(path)
                                 return ["failed", "hash_mismatch", None]
 
-                        self.cache_data[category][version] = {filename: {"hash": sha1,
+                        self.cache_data[category][version] = {filename: {"hash": downloaded_digest,
                                                                          "added": datetime.datetime.now().isoformat()}}
                 except HTTPError:
                     log_error(f"failed to download for '{category} {version}'")
