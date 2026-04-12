@@ -15,7 +15,7 @@ def create_server(port, data_path, server_type, version, java_home, rcon_passwor
     elif server_type == "vanilla":
         if mod_version is not None:
             log_error("-V/--server-version has no effect for vanilla servers, use -v/--version", "error")
-            exit(1)
+            return ["failed", None, None]
         success, version, mod_version, flags = install_vanilla(data_path, version, cache)
         start_cmd = f"java {' '.join(flags)} -jar server.jar nogui"
 
@@ -23,6 +23,8 @@ def create_server(port, data_path, server_type, version, java_home, rcon_passwor
         log_error(f"unknown server type {server_type}", "error")
         return ["failed", None, None]
 
+    if success != "success":
+        return [success, version, mod_version]
 
     if java_home is None or java_home == "" and "JAVA_HOME" in os.environ:
         java_home = os.environ["JAVA_HOME"]

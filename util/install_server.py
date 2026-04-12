@@ -21,7 +21,7 @@ def install_vanilla(download_dir, version_id, cache):
 			latest_snapshot = manifest["latest"]["snapshot"]
 	except HTTPError:
 		log_error("failed to download version manifest data")
-		sys.exit(1)
+		return ["failed", None, None, []]
 
 	versions = {}
 
@@ -37,7 +37,7 @@ def install_vanilla(download_dir, version_id, cache):
 		version_url = versions[version_id]["url"]
 	else:
 		log_error("no such version \'"+version_id+"\'")
-		sys.exit(1)
+		return ["failed", None, None, []]
 
 	try:
 		with requests.get(version_url, headers=Config.default_headers) as version_resp:
@@ -46,13 +46,13 @@ def install_vanilla(download_dir, version_id, cache):
 			server_download = version_json["downloads"]["server"]
 	except HTTPError:
 		log_error("failed to download version data for \'" + version_id + "\'")
-		sys.exit(1)
+		return ["failed", None, None, []]
 
 	fetch_result = cache.get("vanilla", version_id, server_download["sha1"], server_download["url"], "server.jar")
 	if fetch_result[0] != "success":
 		if fetch_result[1] == "hash_mismatch":
 			stderr_print("Exiting.")
-		sys.exit(1)
+		return ["failed", None, None, []]
 	else:
 		shutil.copy(fetch_result[2], os.path.join(download_dir, "server.jar"))
 	return ["success", version_id, None, ["nogui"]]
@@ -78,12 +78,12 @@ def install_paper(download_dir, mc_version_id, paper_version_id, cache):
 
 			if mc_version_id not in versions:
 				log_error("no paper version for Minecraft version \'"+mc_version_id+"\'", "error")
-				exit(1)
+				return ["failed", None, None, []]
 
 
 	except HTTPError:
 		log_error("failed to download version manifest data")
-		sys.exit(1)
+		return ["failed", None, None, []]
 
 	if paper_version_id is None:
 		paper_version_id = "latest_stable"
@@ -91,7 +91,7 @@ def install_paper(download_dir, mc_version_id, paper_version_id, cache):
 	str_builds = [str(build) for build in versions[mc_version_id]["builds"]]
 	if paper_version_id not in str_builds and paper_version_id != "latest" and not paper_version_id.startswith("latest_"):
 		log_error(f"paper version {paper_version_id} not found", "error")
-		exit(1)
+		return ["failed", None, None, []]
 
 	if "_" in paper_version_id and paper_version_id.startswith("latest_"):
 		channel = paper_version_id.split("_")[1]
@@ -111,7 +111,7 @@ def install_paper(download_dir, mc_version_id, paper_version_id, cache):
 						if not builds:
 							if not latest_version:
 								log_error(f"no builds found for channel {channel.upper()} and Minecraft version {mc_version_id}","error")
-								exit(1)
+								return ["failed", None, None, []]
 							else:
 								version_index += 1
 						else:
@@ -120,7 +120,7 @@ def install_paper(download_dir, mc_version_id, paper_version_id, cache):
 
 				except HTTPError:
 					log_error("failed to download version build data")
-					sys.exit(1)
+					return ["failed", None, None, []]
 
 	build_url = f"https://fill.papermc.io/v3/projects/paper/versions/{mc_version_id}/builds/{paper_version_id}"
 
@@ -131,7 +131,7 @@ def install_paper(download_dir, mc_version_id, paper_version_id, cache):
 
 	except HTTPError:
 		log_error("failed to download version build data")
-		sys.exit(1)
+		return ["failed", None, None, []]
 
 	sha256_hash = build["downloads"]["server:default"]["checksums"]["sha256"]
 	download_url = build["downloads"]["server:default"]["url"]
@@ -142,7 +142,7 @@ def install_paper(download_dir, mc_version_id, paper_version_id, cache):
 	if fetch_result[0] != "success":
 		if fetch_result[1] == "hash_mismatch":
 			stderr_print("Exiting.")
-		sys.exit(1)
+		return ["failed", None, None, []]
 	else:
 		shutil.copy(fetch_result[2], os.path.join(download_dir, "server.jar"))
 
