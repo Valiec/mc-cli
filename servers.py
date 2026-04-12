@@ -100,11 +100,12 @@ class Server:
 			exit(1)
 		resp = None
 		if command is None:
-			prompt = f"{self.server_name} > "
+			prompt = f"{self.server_name}> "
 			try:
 				while True:
 					cmd = input(prompt)
-					print(rcon.command(cmd))
+					if cmd != "":
+						print(rcon.command(cmd))
 			except KeyboardInterrupt:
 				sys.exit(0)
 		else:
