@@ -25,12 +25,20 @@ def create_server(port, data_path, server_type, version, java_home, rcon_passwor
     if java_home is None:
         java_home = ""
 
-    with open(os.path.join(data_path, "start.sh"), "w") as f:
-        java_str = f"JAVA_HOME='{java_home}' "
+    with open(os.path.join(data_path, "startup_cmd.sh"), "w") as f:
+        f.write(f"{start_cmd}\n")
+
+    with open(os.path.join(data_path, ".env"), "w") as f:
+        java_str = f"JAVA_HOME='{java_home}'"
         if java_home == "":
             java_str = ""
+        f.write(f"{java_str}\n")
+
+    with open(os.path.join(data_path, "start.sh"), "w") as f:
         f.write('cd "$(dirname "$0")" || exit 1\n')
-        f.write(f'{java_str}{start_cmd} > "mccli_$(date +%F_%T).log" 2>&1 &\n')
+        f.write('source .env\n')
+        f.write('export JAVA_HOME\n')
+        f.write(f'$(cat startup_cmd.sh) > "mccli_$(date +%F_%T).log" 2>&1 &\n')
         f.write('pid="$!"\n')
         f.write('echo "$pid" > .running &&\n')
         f.write('wait "$pid" &&\n')
